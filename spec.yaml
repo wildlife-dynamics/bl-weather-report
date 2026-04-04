@@ -1,12 +1,850 @@
-id:  # Unique workflow identifier (kebab-case)
-requirements: # Package dependencies with channels
+id: bl_weather_report
+requirements:
   - name: ecoscope-workflows-core
-    version: "0.18.0"
+    version: "0.22.17.*"
     channel: https://repo.prefix.dev/ecoscope-workflows/
 
-# List of tasks in execution order
+  - name: ecoscope-workflows-ext-ecoscope
+    version: "0.22.17.*"
+    channel: https://repo.prefix.dev/ecoscope-workflows/
+
+  - name: ecoscope-workflows-ext-custom
+    version: "0.0.39.*"
+    channel: https://repo.prefix.dev/ecoscope-workflows-custom/
+
+  - name: ecoscope-workflows-ext-ste
+    version: "0.0.17.*"
+    channel: https://repo.prefix.dev/ecoscope-workflows-custom/
+
+  - name: ecoscope-workflows-ext-mnc
+    version: "0.0.7.*"
+    channel: https://repo.prefix.dev/ecoscope-workflows-custom/
+
+  - name: ecoscope-workflows-ext-mep
+    version: "0.12.0.*"
+    channel: https://repo.prefix.dev/ecoscope-workflows-custom/
+
+  - name: ecoscope-workflows-ext-big-life
+    version: "0.0.9.*"
+    channel: https://repo.prefix.dev/ecoscope-workflows-custom/
+
+rjsf-overrides:
+  properties:
+    ndvi_method.properties.var.title: " "
+    ndvi_method.properties.var.description: "Method to obtain NDVI values. 'MODIS MYD13A1 16-Day Composite': Uses pre-calculated NDVI from 16-day composites. Provides quality-filtered 'best pixel' values at 500m resolution with ~0.025 accuracy. Better for phenology studies but may saturate in dense canopies. 'MODIS MCD43A4 Daily NBAR': Uses daily nadir BRDF-adjusted reflectance. Computes NDVI from NIR/Red bands with view-angle correction for consistent measurements. Higher temporal resolution but more susceptible to cloud gaps."
+    ndvi_method.properties.var.enum: [
+      "MODIS MYD13A1 16-Day Composite",
+      "MODIS MCD43A4 Daily NBAR",
+    ]
+    ndvi_method.properties.var.default: "MODIS MYD13A1 16-Day Composite"
+    ndvi_method.required: []
+
+task-instance-defaults:
+  skipif:
+    conditions:
+      - any_is_empty_df
+      - any_dependency_skipped
+
 workflow:
-  - name:  # Display name used for the configuration form UI
-    description:  # Description used for the configuration form
-    id:  # Unique task identifier (snake_case)
-    task:  # Function name from task library
+  # Set workflow details 
+  - name: Set Workflow Details
+    id: workflow_details
+    task: set_workflow_details
+  
+  # Define time range 
+  - name: Time Range
+    id: time_range
+    task: set_time_range
+
+  # Define groupers 
+  - name: Set Groupers
+    id: groupers
+    task: set_groupers
+    partial:
+      groupers: 
+        - index_name: "R_NAME"
+
+  # Define GEE connnection 
+  - name: Set GEE connection 
+    id: gee_client 
+    task: set_gee_connection
+
+  #  Connect to ER 
+  - name: Connect to ER 
+    id: er_client_name 
+    task: set_er_connection
+
+  # Set basemaps connection 
+  - name: Configure base map layers
+    id: configure_base_maps
+    task: set_base_maps_pydeck
+    partial:
+      base_maps:
+        - url: >-
+            https://server.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}
+          opacity: 1
+          max_zoom: 20
+        - url: >-
+            https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}
+          opacity: 0.15
+          max_zoom: 20
+
+  - name: Download amboseli conservancy layers
+    id: ambo_ranch_layers
+    task: fetch_and_persist_file
+    partial:
+      url: https://www.dropbox.com/scl/fi/wrcp3pnnxqyrclzmbtt1r/amboseli_ranch_conservancies_layers.gpkg?rlkey=jfbqj1b1nwhijxbsy7b2v1d29&st=d7rbqdfe&dl=0
+      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      overwrite_existing: false
+      retries: 3 
+      unzip: false 
+  
+  - name: Download amboseli ranch boundaries and electric fence
+    id: ambo_bound_fence 
+    task: fetch_and_persist_file
+    partial: 
+      url: https://www.dropbox.com/scl/fi/k6dgrmxmxeb3fe6glihwa/amboseli_group_ranch_boundaries_x_electric_fence.gpkg?rlkey=limtzffe88lr0iof5kf3b6uoy&st=rreho3tq&dl=0
+      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      overwrite_existing: false
+      retries: 3
+      unzip: false
+  
+  - name: Download ambo conservancies 
+    id: ambo_conservancies 
+    task: fetch_and_persist_file
+    partial: 
+      url: https://www.dropbox.com/scl/fi/blo1smf49buhwx24y4z60/amboseli_group_ranch_boundaries.gpkg?rlkey=w86emavj8ug7zab73ifbzg6jv&st=v8uptlb0&dl=0
+      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      overwrite_existing: false
+      retries: 3
+      unzip: false
+
+  - name: Load amboseli conservancy layers 
+    id: load_ambo_layers 
+    task: load_df 
+    partial:  
+      file_path: ${{ workflow.ambo_ranch_layers.return }}
+      layer: null 
+      deserialize_json: false 
+
+  - name: Load amboseli ranch boundaries and electric fence 
+    id: load_ambo_boundaries_fence 
+    task: load_df 
+    partial: 
+      file_path: ${{ workflow.ambo_bound_fence.return }}
+      layer: null 
+      deserialize_json: false 
+  
+  - name: Load amboseli conservancies 
+    id: load_ambo_conservancies 
+    task: load_df 
+    partial: 
+      file_path: ${{ workflow.ambo_conservancies.return }}
+      layer: null 
+      deserialize_json: false 
+
+  - name: Reproject gdf to 4326 for ambo layers 
+    id: reproject_ambo_layers 
+    task: reproject_gdf
+    partial: 
+      gdf: ${{ workflow.load_ambo_layers.return }}
+      target_crs: "EPSG:4326"
+
+  - name: Reproject gdf to 4326 for ambo boundaries and electric fence 
+    id: reproject_ambo_boundaries 
+    task: reproject_gdf
+    partial: 
+      gdf: ${{ workflow.load_ambo_boundaries_fence.return }}
+      target_crs: "EPSG:4326"
+
+  - name: Reproject gdf to 4326 for ambo conservancies
+    id: reproject_ambo_conservancies
+    task: reproject_gdf
+    partial: 
+      gdf: ${{ workflow.load_ambo_conservancies.return }}
+      target_crs: "EPSG:4326"
+
+  - name: Split amboseli layers by land_use 
+    id: split_ambo_layers_use 
+    task: split_gdf_by_column
+    partial: 
+      gdf: ${{ workflow.reproject_ambo_layers.return }}
+      column: land_use
+
+  - name: Annotate amboseli layers with geom type 
+    id: annotate_ambo_layers_gdf_dict 
+    task: annotate_gdf_dict_with_geom_type
+    partial:  
+      gdf_dict: ${{ workflow.split_ambo_layers_use.return }}
+
+  - name: Create styled layers from split amboseli layers 
+    id: create_ambo_layers_styled 
+    task: create_deckgl_layers_from_gdf_dict
+    partial: 
+      gdf_dict: ${{ workflow.annotate_ambo_layers_gdf_dict.return }}
+      styles: 
+        Rangeland:
+          extruded: false
+          get_fill_color: [163, 156, 145]
+          get_line_color: [163, 156, 145]
+          get_line_width: 0.85
+          stroked: true 
+          filled: true 
+          opacity: 0.75
+
+        Rangeland and settlement:
+          extruded: false
+          get_fill_color: [255, 160, 122]
+          get_line_color: [255, 160, 122]
+          get_line_width: 0.85
+          stroked: true 
+          filled: true 
+          opacity: 0.75
+
+        Settlement and agriculture:
+          extruded: false
+          get_fill_color: [47, 79, 79]
+          get_line_color: [47, 79, 79]
+          get_line_width: 0.85
+          stroked: true 
+          filled: true 
+          opacity: 0.75
+
+        Conservancies:
+          extruded: false
+          get_fill_color: [143, 188, 139]
+          get_line_color: [143, 188, 139]
+          get_line_width: 0.85
+          stroked: true 
+          filled: true 
+          opacity: 0.75
+
+        National parks and reserves:
+          extruded: false
+          get_fill_color: [77, 102, 0]
+          get_line_color: [77, 102, 0]
+          get_line_width: 0.85
+          stroked: true 
+          filled: true 
+          opacity: 0.75
+
+      legends: 
+        title: Map Layers 
+        values: 
+          - label: Conservancies 
+            color: "#8fbc8b"
+
+          - label: National park and reserves
+            color: "#4d6600"
+
+          - label: Settlement and agriculture 
+            color: "#2f4f4f"
+
+          - label: Rangeland 
+            color: "#a39c91"
+
+          - label: Rangeland and settlement 
+            color: "#ffa07a"
+
+  - name: Split ambo electric fence and boundaries by land_use
+    id: split_ambo_boundaries
+    task: split_gdf_by_column
+    partial:  
+      gdf: ${{ workflow.reproject_ambo_boundaries.return }}
+      column: land_use 
+
+  - name: Annotate amboseli boundaries and electric fence with geom type 
+    id: annotate_ambo_boundaries 
+    task: annotate_gdf_dict_with_geom_type
+    partial: 
+      gdf_dict: ${{ workflow.split_ambo_boundaries.return }}
+
+  - name: Create styled layers from split amboseli boundaries and electric fence 
+    id: create_ambo_boundaries_styled 
+    task: create_deckgl_layers_from_gdf_dict
+    partial:
+      gdf_dict: ${{ workflow.annotate_ambo_boundaries.return }}
+      styles: 
+        Ranch boundaries: 
+          extruded: false 
+          get_color: [0, 0, 0]
+          get_line_width: 0.95
+          get_width:
+          stroked: true 
+          filled: false
+          opacity: 0.55
+
+        Electric Fence:
+          extruded: false 
+          get_color: [45, 98, 177]
+          get_width: 5.5 
+          stroked: true 
+          filled: false 
+          opacity: 1.0
+
+      legends: 
+        title: ""
+        values: 
+          - label: Electric fence
+            color: "#2d62b1"
+
+          - label: Ranch boundaries
+            color: "#000000"
+  - name: Retrieve all events 
+    id: get_events_data
+    task: get_events
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      client: ${{ workflow.er_client_name.return }}
+      time_range: ${{ workflow.time_range.return }}
+      event_columns:
+        - id
+        - time
+        - event_type
+        - event_category
+        - reported_by
+        - serial_number
+        - geometry
+        - created_at
+        - event_details
+
+      event_types:
+        - rainfall_rep
+      raise_on_empty: true
+      include_details: true
+      include_updates: false
+      include_related_events: false
+      include_null_geometry: false
+      include_display_values: false
+
+  - name: Normalize events column
+    id: normalize_events_column
+    task: normalize_json_column
+    partial:
+      column: event_details
+      df: ${{ workflow.get_events_data.return }}
+      skip_if_not_exists: true 
+      sort_columns: true 
+
+  # rename columns 
+  - name: Rename weather event columns 
+    id: rename_weather_columns
+    task: transform_columns
+    partial:
+      drop_columns: []
+      retain_columns: []
+      rename_columns:
+        event_details__rainfallrep_raingauge_digital : digital_readings 
+        event_details__rainfallrep_raingauge_manual : manual_readings 
+        event_details__raingauge_stations: raingauge_stations
+
+      skip_missing_rename: true 
+      required_columns: 
+        - event_details__rainfallrep_raingauge_digital
+        - event_details__rainfallrep_raingauge_manual
+        - event_details__raingauge_stations
+
+      df: ${{ workflow.normalize_events_column.return }}
+
+  # Add temporal index
+  - name: Add temporal index to events
+    id: events_add_temporal_index
+    task: add_temporal_index
+    partial:
+      df: ${{ workflow.rename_weather_columns.return }}
+      time_col: time 
+      groupers: ${{ workflow.groupers.return }}
+      cast_to_datetime: true
+      format: mixed 
+
+  - name: Combine digital and manual readings to have overall rainfall recordings 
+    id: combine_digital_manual
+    task: create_combined_column 
+    partial: 
+      df: ${{ workflow.events_add_temporal_index.return }}
+      primary_column: digital_readings
+      fallback_column: manual_readings
+      output_column: overall_readings 
+      fill_remaining: 0 
+  
+  - name: Replace empty raingauge_stations readings with Unknown 
+    id: replace_empty_stations 
+    task: replace_empty_strings
+    partial: 
+      df: ${{ workflow.combine_digital_manual.return }}
+      replacement: Unknown
+      columns: 
+        - raingauge_stations 
+
+  # convert cols to float
+  - name: Convert cols to float
+    id: convert_col_float
+    task: convert_to_float
+    partial:
+      df: ${{ workflow.replace_empty_stations.return }}
+      columns: 
+        - overall_readings
+      errors: coerce 
+      fill_value: 0 
+      inplace: true 
+  
+  # fill missing values with 0
+  - name: fill missing numeric values
+    id: fill_numeric_nulls_step
+    task: fill_numeric_nulls
+    partial:
+      df: ${{ workflow.convert_col_float.return }}
+      value: 0
+      columns:
+        - overall_readings
+
+  - name: Group and aggregate values
+    id: group_and_aggregate 
+    task: groupby_aggregate 
+    partial:  
+      df: ${{ workflow.fill_numeric_nulls_step.return }} 
+      groupby_columns: 
+        - raingauge_stations
+      agg_dict: 
+        overall_readings: sum
+        geometry: first
+      reset_index: true 
+
+  # Draw Bar Chart
+  - name: Draw Bar Chart
+    id: draw_rainfall_chart
+    task: draw_bar_chart
+    partial:
+      bar_chart_configs:
+        - column: overall_readings
+          agg_func: sum
+          label: raingauge measurements
+          style:
+            marker_color: '#6495ed'
+      category: raingauge_stations
+      layout_kwargs:
+        font_size: 12
+        font_color: "#222222"
+        plot_bgcolor: "#f5f5f5"
+        title_x: 0.5 
+        xaxis:
+          title: 'Station'
+        yaxis:
+          title: 'Total (mm)'
+        showlegend: false
+        bargap: 0.1
+      dataframe: ${{ workflow.group_and_aggregate.return }}
+
+  - name: Persist Rainfall bar chart
+    id: persist_rainfall_url
+    task: persist_text
+    partial:
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      text: ${{ workflow.draw_rainfall_chart.return }}
+      filename: rainfall_readings_over_time.html #-- convert to png 
+
+  - name: Persist rainfall data 
+    id: persist_rainfall_data 
+    task: persist_df 
+    partial: 
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      filetype: gpkg 
+      df: ${{ workflow.group_and_aggregate.return }}
+      filename: overall_rainfall_station_readings
+  
+  - name: Create month name column 
+    id: create_month_name 
+    task: return_month_name 
+    partial: 
+      df: ${{ workflow.fill_numeric_nulls_step.return }} 
+      time_column: time 
+      month_column: month_name
+
+  - name: group data by month and rainfall stations 
+    id: group_month_rain 
+    task: groupby_aggregate
+    partial: 
+      df: ${{ workflow.create_month_name.return }}
+      groupby_columns:
+        - month_name 
+        - raingauge_stations
+      agg_dict: 
+        overall_readings: sum
+        geometry: first
+      reset_index: true 
+
+  - name: Persist monthly  rainfall data
+    id: persist_monthly_rainfall_data 
+    task: persist_df 
+    partial: 
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      filetype: gpkg 
+      df: ${{ workflow.group_and_aggregate.return }}
+      filename: monthly_rainfall_station_readings
+
+  - name: Get ordered month names 
+    id: get_ordered_month_names 
+    task: ordered_month_list 
+
+  - name: Apply colormap to month_name column 
+    id: apply_month_color
+    task: apply_color_map
+    partial: 
+      input_column_name: month_name
+      output_column_name: colors
+      colormap: Blues_r
+      df: ${{ workflow.group_month_rain.return }}
+
+  - name: Draw stacked bar chart by month 
+    id: draw_monthly_stacked_bar_chart 
+    task: draw_custom_stacked_bar_chart 
+    partial:  
+      dataframe: ${{ workflow.apply_month_color.return }}
+      x_axis: raingauge_stations
+      y_axis: overall_readings
+      category_order: null
+      stack_column: month_name
+      agg_function: sum 
+      stack_order: ${{ workflow.get_ordered_month_names.return }}
+      color_column: colors
+      plot_style:
+        xperiodalignment: middle
+      layout_style: 
+        font_size: 12
+        font_color: "#222222"
+        plot_bgcolor: "#f5f5f5"
+        title_x: 0.5 
+        xaxis:
+          title: 'Station'
+        yaxis:
+          title: 'Total (mm)'
+        showlegend: true
+        bargap: 0.1
+
+  - name: Persist Rainfall bar chart
+    id: persist_monthly_rainfall_url
+    task: persist_text
+    partial:
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      text: ${{ workflow.draw_monthly_stacked_bar_chart.return }}
+      filename: monthly_rainfall_readings.html #-- convert to png 
+
+  - name: Exclude geom outliers from rainfall_rep events
+    id: exclude_rf_outliers
+    task: exclude_geom_outliers
+    partial: 
+      df: ${{ workflow.group_and_aggregate.return }}
+      z_threshold: 3
+
+  - name: Remove rainfall invalid points 
+    id: remove_rf_invalid_geoms 
+    task: ecoscope_workflows_ext_custom.tasks.transformation.drop_null_geometry
+    partial: 
+      gdf: ${{ workflow.exclude_rf_outliers.return }}
+      geometry_column: geometry 
+
+  - name: Create events point layer
+    id: events_scatter_plot_layer 
+    task: create_scatterplot_layer
+    partial: 
+      geodataframe: ${{ workflow.remove_rf_invalid_geoms.return }}
+      layer_style: 
+        get_fill_color: [100, 149, 237]
+        get_line_color: [70, 119, 207]
+        get_radius: overall_readings
+        line_width_min_pixels: 1
+        radius_units: pixels 
+        radius_min_pixels: 5
+        radius_max_pixels: 20 
+        radius_scale: 0.044
+        opacity: 0.85 
+        stroked: true
+
+      legend: 
+        title: Readings
+        values:
+          - label: Rainfall readings
+            color: "#6495ed"
+
+  - name: Convert overall_readings to int 
+    id: convert_or_int
+    task: convert_to_int 
+    partial: 
+      df: ${{ workflow.remove_rf_invalid_geoms.return }}
+      columns: 
+        - overall_readings
+      errors: coerce
+      fill_value: 0 
+      inplace: false 
+
+  - name: Convert overall_readings to string 
+    id: convert_or_string 
+    task: convert_to_string 
+    partial: 
+      df: ${{ workflow.convert_or_int.return }}
+      columns: 
+        - overall_readings
+      inplace: true
+
+  - name: Create text layer 
+    id: create_rainfall_text_layer 
+    task: create_custom_text_layer 
+    partial: 
+      geodataframe: ${{ workflow.convert_or_string.return }}
+      layer_style: 
+        get_text: overall_readings
+        get_color: [0,0,0,255]
+        get_size: 65 #1500
+        size_units: pixels
+        size_min_pixels: 90 #65 
+        size_max_pixels: 180
+        # size_scale: 2.00 #2.25 
+
+        font_family: Calibri 
+        font_weight: bold
+        get_text_anchor: middle 
+        get_alignment_baseline: center
+        billboard: true 
+
+        background_padding: [-3,-20]
+        pickable: false
+        auto_highlight: false 
+        background_border_radius: 1
+        get_pixel_offset: [-1,-5] 
+      use_centroid: true 
+      legend: null 
+
+  # global zoom value 
+  - name: Global map zoom value
+    id: global_zoom_value
+    task: view_state_deck_gdf
+    partial:
+      pitch: 0
+      bearing: 0
+      gdf: ${{ workflow.remove_rf_invalid_geoms.return }}
+
+  - name: Combine styled layers with rainfall events 
+    id: combine_map_layers
+    task: combine_deckgl_map_layers
+    partial:
+      static_layers: 
+        - ${{ workflow.create_ambo_layers_styled.return }}
+        - ${{ workflow.create_ambo_boundaries_styled.return }}
+
+      grouped_layers: 
+        - ${{ workflow.events_scatter_plot_layer.return }}
+        - ${{ workflow.create_rainfall_text_layer.return }}
+
+  - name: Draw rainfall map
+    id: draw_rainfall_map
+    task: draw_map
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      tile_layers: ${{ workflow.configure_base_maps.return }}
+      static: false
+      title: null
+      max_zoom: 10
+      legend_style:
+        placement: "bottom-right"
+      geo_layers: ${{ workflow.combine_map_layers.return }}
+      view_state: ${{ workflow.global_zoom_value.return }} 
+
+  - name: Persist rainfall map HTML paths
+    id: persist_rainfall_urls
+    task: persist_text
+    partial:
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      text: ${{ workflow.draw_rainfall_map.return }}
+      filename: rainfall_map.html  # -- convert this to png 
+
+  - name: Split values by ranch name 
+    id: split_roi_groups 
+    task: split_groups
+    partial: 
+      df: ${{ workflow.reproject_ambo_conservancies.return }}
+      groupers: ${{ workflow.groupers.return }}
+      
+  - name: NDVI Method
+    id: ndvi_method
+    task: set_string_var
+    
+  - name: "NDVI Trend"
+    id: calculate_ndvi
+    task: calculate_ndvi_range
+    partial:
+      client: ${{ workflow.gee_client.return }}
+      time_range: ${{ workflow.time_range.return }}
+      ndvi_method: ${{ workflow.ndvi_method.return }}
+      baseline_time_range: null # todo: add baseline time range when supported by web
+      image_size: 1000000000 # todo: use baseline time range when supported by web
+    mapvalues:
+      argnames: roi
+      argvalues: ${{ workflow.split_roi_groups.return}}
+
+  - name: Persist NDVI Data
+    id: persist_ndvi_data
+    task: persist_df_wrapper
+    skipif:
+      conditions:
+        - never
+    partial:
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      sanitize: true
+      filename_prefix: ndvi
+    mapvalues:
+      argnames: df
+      argvalues: ${{ workflow.calculate_ndvi.return }}
+
+  - name: Draw NDVI
+    id: draw_ndvi
+    task: draw_historic_timeseries
+    partial:
+      current_value_column: "NDVI"
+      current_value_title: "NDVI"
+      historic_min_column: "min"
+      historic_max_column: "max"
+      historic_mean_column: "mean"
+      historic_band_title: "Historic Min-Max"
+      historic_mean_title: "Historic Mean"
+      layout_style: null
+      upper_lower_band_style:
+        mode: lines
+        line:
+          color: "rgba(144, 238, 144, 0.8)"
+        fillcolor: "rgba(144, 238, 144, 0.3)"
+      historic_mean_style: null
+      current_value_style: null
+      time_column: img_date
+    mapvalues:
+      argnames: dataframe
+      argvalues: ${{ workflow.calculate_ndvi.return}}
+
+  - name: Get unique ranch name
+    id: get_ranch_name
+    task: dataframe_column_first_unique_str
+    partial:
+      column_name: "R_NAME"
+    mapvalues:
+      argnames: df 
+      argvalues: ${{ workflow.split_roi_groups.return }}
+
+  - name: Combine ranch names and ndvi charts  
+    id: zip_ranch_ndvi
+    task: zip_groupbykey
+    partial:
+      sequences:
+        - ${{ workflow.draw_ndvi.return }}
+        - ${{ workflow.get_ranch_name.return }}
+
+  - name: Persist NDVI Chart as Text
+    id: persist_ndvi
+    task: persist_text
+    partial:
+      root_path:  ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+    mapvalues:
+      argnames: 
+        - text
+        - filename_suffix
+      argvalues: ${{ workflow.zip_ranch_ndvi.return }}
+
+  - name: Convert ndvi ranch chart to png 
+    id: convrt_ranch_png 
+    task: html_to_png 
+    partial: 
+      output_dir: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      config: 
+        full_page: false
+        device_scale_factor: 2.0 
+        wait_for_timeout: 10 
+        max_concurrent_pages: 3
+    mapvalues:
+      argnames: html_path
+      argvalues: ${{ workflow.persist_ndvi.return }}
+
+  - name: Convert bar chart to png 
+    id: convrt_br_png 
+    task: html_to_png 
+    partial: 
+      output_dir: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      html_path: ${{ workflow.persist_rainfall_url.return }}
+      config: 
+        full_page: false
+        device_scale_factor: 2.0 
+        wait_for_timeout: 10 
+        max_concurrent_pages: 1
+
+  - name: Convert monthly bar chart to png 
+    id: convrt_monthly_png 
+    task: html_to_png 
+    partial: 
+      output_dir: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      html_path: ${{ workflow.persist_monthly_rainfall_url.return }}
+      config: 
+        full_page: false
+        device_scale_factor: 2.0 
+        wait_for_timeout: 10 
+        max_concurrent_pages: 1
+
+  - name: Convert map to png 
+    id: convert_map_png 
+    task: html_to_png 
+    partial: 
+      output_dir: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      html_path: ${{ workflow.persist_rainfall_urls.return }}
+      config: 
+        full_page: false
+        device_scale_factor: 2.0 
+        wait_for_timeout: 40000
+        max_concurrent_pages: 1
+
+  - name: Download weather report word context 
+    id: weather_report_word_doc 
+    task: fetch_and_persist_file
+    partial: 
+      url: https://www.dropbox.com/scl/fi/mtsv3inq9u9443a676bn3/big_life_weather_report_template.docx?rlkey=hq3cnrdza32430iniffo6s39p&st=nsa0j1c1&dl=0
+      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      overwrite_existing: false
+      retries: 3
+      unzip: false
+
+  - name: Get user name to use on template 
+    id: get_user_name 
+    task: get_current_user
+    partial: 
+      client: ${{ workflow.er_client_name.return }}
+  
+  - name: Get user full name 
+    id: get_fullname 
+    task: get_user_full_name 
+    partial: 
+      user: ${{ workflow.get_user_name.return }}
+
+  # Big life weather report context 
+  - name: Generate weather report 
+    id: generate_bl_weather_report 
+    task: generate_weather_report 
+    partial:  
+      template_path: ${{ workflow.weather_report_word_doc.return }}
+      output_dir: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      generated_by: ${{ workflow.get_fullname.return }}
+      validate_images: true 
+      box_height: 3.12
+      box_width: 5.34
+      time_period: ${{ workflow.time_range.return}}
+      filename: "big_life_weather_report.docx"
+
+  - name: Big life event report dashboard
+    id: bl_events_dashboard
+    task: gather_dashboard
+    partial:
+      details: ${{ workflow.workflow_details.return}}
+      widgets: []
+      time_range: ${{ workflow.time_range.return}}
+      groupers: ${{ workflow.groupers.return }}
+      
