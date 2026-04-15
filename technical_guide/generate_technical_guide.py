@@ -713,7 +713,7 @@ def build():
                 ["ecoscope-workflows-ext-ecoscope", "0.22.17.*", "Ecoscope spatial analysis tasks (events, map layers, charts)"],
                 ["ecoscope-workflows-ext-custom",   "0.0.39.*",  "Custom utility tasks (column transforms, geometry cleaning)"],
                 ["ecoscope-workflows-ext-ste",      "0.0.17.*",  "STE-specific tasks (NDVI range, historic timeseries chart)"],
-                ["ecoscope-workflows-ext-mncx",     "0.0.7.*",   "MNCX domain tasks"],
+                ["ecoscope-workflows-ext-mnc",      "0.0.7.*",   "MNC domain tasks"],
                 ["ecoscope-workflows-ext-mep",      "0.12.0.*",  "MEP tasks (weather report generation, stacked bar chart)"],
                 ["ecoscope-workflows-ext-big-life",  "0.0.9.*",  "Big Life Foundation tasks (weather report template context)"],
             ],
