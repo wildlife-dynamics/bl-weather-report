@@ -455,13 +455,16 @@ workflow:
       df: ${{ workflow.group_and_aggregate.return }}
       filename: overall_rainfall_station_readings
   
-  - name: Create month name column 
-    id: create_month_name 
-    task: return_month_name 
-    partial: 
+  - name: Add month name on rainfall data
+    id: create_month_name
+    task: decompose_datetime
+    partial:
+      datetime_column: time
+      components:
+        - month_name
+      remove_source: false 
+      column_prefix: ts
       df: ${{ workflow.fill_numeric_nulls_step.return }} 
-      time_column: time 
-      month_column: month_name
 
   - name: group data by month and rainfall stations 
     id: group_month_rain 
@@ -469,7 +472,7 @@ workflow:
     partial: 
       df: ${{ workflow.create_month_name.return }}
       groupby_columns:
-        - month_name 
+        - ts_month_name 
         - raingauge_stations
       agg_dict: 
         overall_readings: sum
@@ -493,9 +496,22 @@ workflow:
     id: apply_month_color
     task: apply_color_map
     partial: 
-      input_column_name: month_name
+      input_column_name: ts_month_name
       output_column_name: colors
-      colormap: Blues_r
+      colormap: [
+        '#08589b',
+        '#1070b0',
+        '#2687bb',
+        '#3b9dc7',
+        '#51b5d2',
+        '#6ec5c8',
+        '#88d1c0',
+        '#a5dcb6',
+        '#bce5be',
+        '#cfecc8',
+        '#dcf1d6',
+        '#e9f7e3'
+        ] #Blues_r
       df: ${{ workflow.group_month_rain.return }}
 
   - name: Draw stacked bar chart by month 
@@ -506,7 +522,7 @@ workflow:
       x_axis: raingauge_stations
       y_axis: overall_readings
       category_order: null
-      stack_column: month_name
+      stack_column: ts_month_name
       agg_function: sum 
       stack_order: ${{ workflow.get_ordered_month_names.return }}
       color_column: colors

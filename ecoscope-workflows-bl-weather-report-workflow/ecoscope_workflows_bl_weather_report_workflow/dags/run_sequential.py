@@ -45,7 +45,6 @@ from ecoscope_workflows_ext_big_life.tasks import (
 from ecoscope_workflows_ext_big_life.tasks import (
     replace_empty_strings as replace_empty_strings,
 )
-from ecoscope_workflows_ext_big_life.tasks import return_month_name as return_month_name
 from ecoscope_workflows_ext_custom.tasks.io import get_current_user as get_current_user
 from ecoscope_workflows_ext_custom.tasks.io import html_to_png as html_to_png
 from ecoscope_workflows_ext_custom.tasks.io import load_df as load_df
@@ -61,6 +60,9 @@ from ecoscope_workflows_ext_custom.tasks.results import (
 )
 from ecoscope_workflows_ext_custom.tasks.spatial_ops import (
     reproject_gdf as reproject_gdf,
+)
+from ecoscope_workflows_ext_custom.tasks.transformation import (
+    decompose_datetime as decompose_datetime,
 )
 from ecoscope_workflows_ext_custom.tasks.transformation import (
     drop_null_geometry as drop_null_geometry,
@@ -925,7 +927,7 @@ def main(params: Params):
     )
 
     create_month_name = (
-        return_month_name.validate()
+        decompose_datetime.validate()
         .set_task_instance_id("create_month_name")
         .handle_errors()
         .with_tracing()
@@ -937,9 +939,11 @@ def main(params: Params):
             unpack_depth=1,
         )
         .partial(
+            datetime_column="time",
+            components=["month_name"],
+            remove_source=False,
+            column_prefix="ts",
             df=fill_numeric_nulls_step,
-            time_column="time",
-            month_column="month_name",
             **(params_dict.get("create_month_name") or {}),
         )
         .call()
@@ -959,7 +963,7 @@ def main(params: Params):
         )
         .partial(
             df=create_month_name,
-            groupby_columns=["month_name", "raingauge_stations"],
+            groupby_columns=["ts_month_name", "raingauge_stations"],
             agg_dict={"overall_readings": "sum", "geometry": "first"},
             reset_index=True,
             **(params_dict.get("group_month_rain") or {}),
@@ -1018,9 +1022,22 @@ def main(params: Params):
             unpack_depth=1,
         )
         .partial(
-            input_column_name="month_name",
+            input_column_name="ts_month_name",
             output_column_name="colors",
-            colormap="Blues_r",
+            colormap=[
+                "#08589b",
+                "#1070b0",
+                "#2687bb",
+                "#3b9dc7",
+                "#51b5d2",
+                "#6ec5c8",
+                "#88d1c0",
+                "#a5dcb6",
+                "#bce5be",
+                "#cfecc8",
+                "#dcf1d6",
+                "#e9f7e3",
+            ],
             df=group_month_rain,
             **(params_dict.get("apply_month_color") or {}),
         )
@@ -1044,7 +1061,7 @@ def main(params: Params):
             x_axis="raingauge_stations",
             y_axis="overall_readings",
             category_order=None,
-            stack_column="month_name",
+            stack_column="ts_month_name",
             agg_function="sum",
             stack_order=get_ordered_month_names,
             color_column="colors",
