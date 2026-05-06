@@ -22,8 +22,13 @@ from ecoscope_workflows_core.tasks.skip import never as never
 from ecoscope_workflows_core.tasks.transformation import (
     add_temporal_index as add_temporal_index,
 )
+from ecoscope_workflows_core.tasks.transformation import (
+    convert_column_values_to_numeric as convert_column_values_to_numeric,
+)
+from ecoscope_workflows_core.tasks.transformation import (
+    convert_column_values_to_string as convert_column_values_to_string,
+)
 from ecoscope_workflows_ext_big_life.tasks import convert_to_float as convert_to_float
-from ecoscope_workflows_ext_big_life.tasks import convert_to_string as convert_to_string
 from ecoscope_workflows_ext_big_life.tasks import (
     create_combined_column as create_combined_column,
 )
@@ -85,7 +90,6 @@ from ecoscope_workflows_ext_ecoscope.tasks.transformation import (
 from ecoscope_workflows_ext_ecoscope.tasks.transformation import (
     normalize_json_column as normalize_json_column,
 )
-from ecoscope_workflows_ext_mnc.tasks import convert_to_int as convert_to_int
 from ecoscope_workflows_ext_mnc.tasks import (
     exclude_geom_outliers as exclude_geom_outliers,
 )
@@ -1389,7 +1393,7 @@ def main(params: Params):
             method="call",
         ),
         "convert_or_int": Node(
-            async_task=convert_to_int.validate()
+            async_task=convert_column_values_to_numeric.validate()
             .set_task_instance_id("convert_or_int")
             .handle_errors()
             .with_tracing()
@@ -1406,15 +1410,12 @@ def main(params: Params):
                 "columns": [
                     "overall_readings",
                 ],
-                "errors": "coerce",
-                "fill_value": 0,
-                "inplace": False,
             }
             | (params_dict.get("convert_or_int") or {}),
             method="call",
         ),
         "convert_or_string": Node(
-            async_task=convert_to_string.validate()
+            async_task=convert_column_values_to_string.validate()
             .set_task_instance_id("convert_or_string")
             .handle_errors()
             .with_tracing()
@@ -1431,7 +1432,6 @@ def main(params: Params):
                 "columns": [
                     "overall_readings",
                 ],
-                "inplace": True,
             }
             | (params_dict.get("convert_or_string") or {}),
             method="call",

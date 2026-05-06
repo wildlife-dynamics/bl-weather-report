@@ -587,23 +587,19 @@ workflow:
 
   - name: Convert overall_readings to int 
     id: convert_or_int
-    task: convert_to_int 
+    task: convert_column_values_to_numeric 
     partial: 
       df: ${{ workflow.remove_rf_invalid_geoms.return }}
       columns: 
         - overall_readings
-      errors: coerce
-      fill_value: 0 
-      inplace: false 
-
+        
   - name: Convert overall_readings to string 
     id: convert_or_string 
-    task: convert_to_string 
+    task: convert_column_values_to_string
     partial: 
       df: ${{ workflow.convert_or_int.return }}
       columns: 
         - overall_readings
-      inplace: true
 
   - name: Create text layer 
     id: create_rainfall_text_layer 

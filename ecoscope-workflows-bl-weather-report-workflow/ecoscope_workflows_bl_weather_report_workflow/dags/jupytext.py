@@ -31,8 +31,13 @@ from ecoscope_workflows_core.tasks.skip import never as never
 from ecoscope_workflows_core.tasks.transformation import (
     add_temporal_index as add_temporal_index,
 )
+from ecoscope_workflows_core.tasks.transformation import (
+    convert_column_values_to_numeric as convert_column_values_to_numeric,
+)
+from ecoscope_workflows_core.tasks.transformation import (
+    convert_column_values_to_string as convert_column_values_to_string,
+)
 from ecoscope_workflows_ext_big_life.tasks import convert_to_float as convert_to_float
-from ecoscope_workflows_ext_big_life.tasks import convert_to_string as convert_to_string
 from ecoscope_workflows_ext_big_life.tasks import (
     create_combined_column as create_combined_column,
 )
@@ -94,7 +99,6 @@ from ecoscope_workflows_ext_ecoscope.tasks.transformation import (
 from ecoscope_workflows_ext_ecoscope.tasks.transformation import (
     normalize_json_column as normalize_json_column,
 )
-from ecoscope_workflows_ext_mnc.tasks import convert_to_int as convert_to_int
 from ecoscope_workflows_ext_mnc.tasks import (
     exclude_geom_outliers as exclude_geom_outliers,
 )
@@ -1717,7 +1721,7 @@ convert_or_int_params = dict()
 
 
 convert_or_int = (
-    convert_to_int.set_task_instance_id("convert_or_int")
+    convert_column_values_to_numeric.set_task_instance_id("convert_or_int")
     .handle_errors()
     .with_tracing()
     .skipif(
@@ -1730,9 +1734,6 @@ convert_or_int = (
     .partial(
         df=remove_rf_invalid_geoms,
         columns=["overall_readings"],
-        errors="coerce",
-        fill_value=0,
-        inplace=False,
         **convert_or_int_params,
     )
     .call()
@@ -1752,7 +1753,7 @@ convert_or_string_params = dict()
 
 
 convert_or_string = (
-    convert_to_string.set_task_instance_id("convert_or_string")
+    convert_column_values_to_string.set_task_instance_id("convert_or_string")
     .handle_errors()
     .with_tracing()
     .skipif(
@@ -1763,10 +1764,7 @@ convert_or_string = (
         unpack_depth=1,
     )
     .partial(
-        df=convert_or_int,
-        columns=["overall_readings"],
-        inplace=True,
-        **convert_or_string_params,
+        df=convert_or_int, columns=["overall_readings"], **convert_or_string_params
     )
     .call()
 )
