@@ -5,32 +5,35 @@
 
 ```yaml
 # fingerprint:
-artifacts_sha256_basic: 97bcbab1dab523526014252f5f196250d86d7b7658a7f8b34b107721be524463
-artifacts_sha256_strict: 5e5110743899ff9948400d28349d088a307826731fb3c750004e1b5bfe64289a
+artifacts_sha256_basic: 7c059a690807bc9d8472ef874df46d5f35bac0adc7f4d2167eac2ac62a8b0f88
+artifacts_sha256_strict: a82b12c02983f7217cb72a7e24c2dc899610e197b754ef64913a1cc25c404004
 installed_requirements:
 - channel: https://repo.prefix.dev/ecoscope-workflows/
-  name: ecoscope-workflows-core
-  version: {version: ==0.22.17}
-- channel: https://repo.prefix.dev/ecoscope-workflows/
-  name: ecoscope-workflows-ext-ecoscope
-  version: {version: ==0.22.17}
+  name: ecoscope-platform
+  version: {version: ==2.18.0}
 - channel: https://repo.prefix.dev/ecoscope-workflows-custom/
   name: ecoscope-workflows-ext-custom
-  version: {version: ==0.0.39}
+  version: {version: ==0.1.0rc14}
 - channel: https://repo.prefix.dev/ecoscope-workflows-custom/
   name: ecoscope-workflows-ext-ste
-  version: {version: ==0.0.17}
+  version: {version: ==0.0.0rc1}
 - channel: https://repo.prefix.dev/ecoscope-workflows-custom/
   name: ecoscope-workflows-ext-mnc
-  version: {version: ==0.0.7}
+  version: {version: ==1.0.0}
 - channel: https://repo.prefix.dev/ecoscope-workflows-custom/
-  name: ecoscope-workflows-ext-mep
-  version: {version: ==0.12.0}
+  name: ecoscope-workflows-ext-wwf-virunga
+  version: {version: ==0.0.0rc9}
 - channel: https://repo.prefix.dev/ecoscope-workflows-custom/
   name: ecoscope-workflows-ext-big-life
-  version: {version: ==0.0.9}
-params_sha256: f5607cb4937e0241632e8f4208e077ccb544fa46584f380f97d1f3b3c8a665ee
-spec_sha256: ffaa16b6817d0eb722414e32444bcc9c0c0bb840047ad044e279e25439bf54f1
+  version: {version: ==1.0.0}
+- channel: conda-forge
+  name: pydeck
+  version: {version: ==0.9.2}
+- channel: conda-forge
+  name: opentelemetry-sdk
+  version: {version: ==1.44.0}
+params_sha256: cefc528e81fd30a4f087ebb16a6e6b6e970455659087a957118ea18bff8aa1a9
+spec_sha256: 8a79589dbb85b66bb042bfcb4b3c9cf14be90ffdcf82dab8225be5b3ca132342
 
 ```
 

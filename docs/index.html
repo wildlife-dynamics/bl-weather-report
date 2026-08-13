@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BL Weather Report</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="bar">
+      <a class="brand" href="index.html">BL Weather Report</a>
+      <nav>
+        <a href="index.html" class="active">Overview</a>
+        <a href="user-guide.html">User Guide</a>
+        <a href="technical-guide.html">Technical Guide</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+        <a href="https://github.com/wildlife-dynamics/bl_weather_report">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1>BL Weather Report</h1>
+    <p class="lede">Ingests rainfall gauge observations from EarthRanger, derives NDVI vegetation condition per ranch from Google Earth Engine, and produces an automated weather report and dashboard for the Amboseli ecosystem.</p>
+
+    <div class="card-grid">
+      <a class="card" href="user-guide.html">
+        <h3>User Guide</h3>
+        <p>Step-by-step instructions for loading, configuring, and running the workflow.</p>
+      </a>
+      <a class="card" href="technical-guide.html">
+        <h3>Technical Guide</h3>
+        <p>Deeper look at the workflow's internals — the rainfall pipeline, map layers, NDVI fan-out, and report generation.</p>
+      </a>
+      <a class="card" href="troubleshooting.html">
+        <h3>Troubleshooting</h3>
+        <p>Common errors you may hit while configuring or running the workflow, and how to resolve them.</p>
+      </a>
+    </div>
+
+    <h2>What it produces</h2>
+    <ul>
+      <li><strong>Overall rainfall bar chart</strong> &mdash; total millimetres per gauge station for the analysis period</li>
+      <li><strong>Monthly stacked bar chart</strong> &mdash; month-by-month rainfall breakdown per station, ordered by calendar month</li>
+      <li><strong>Rainfall by station summary table</strong> &mdash; sortable, filterable table of total readings per station</li>
+      <li><strong>Interactive rainfall map</strong> &mdash; Amboseli land use, ranch boundaries, and electric fence layers, with a clustered proportional-symbol layer of rainfall readings per station</li>
+      <li><strong>Per-ranch NDVI time-series charts</strong> &mdash; current NDVI overlaid against the historic min/max/mean range, one chart per ranch</li>
+      <li><strong>A data file</strong> &mdash; aggregated station rainfall readings with point geometry (GeoParquet)</li>
+      <li><strong>A Word document report</strong> &mdash; every chart, the map, and all NDVI charts embedded in the Big Life weather report template</li>
+      <li><strong>An interactive dashboard</strong> &mdash; 4 widgets: rainfall map, overall rainfall chart, monthly rainfall chart, and the rainfall-by-station table</li>
+    </ul>
+
+    <h2>Requirements</h2>
+    <ul>
+      <li>Access to an <strong>EarthRanger</strong> instance with <code>rainfall_rep</code> events logged for the analysis period</li>
+      <li>Access to a <strong>Google Earth Engine</strong> service account with a private key in JSON format</li>
+    </ul>
+    <p>The Amboseli geospatial layers and the Word report template are downloaded automatically from Dropbox at run time &mdash; no additional setup is required for these.</p>
+
+    <h2>Get started</h2>
+    <p>New to the workflow? Start with the <a href="user-guide.html">User Guide</a> for a walkthrough of loading the template, connecting EarthRanger and Google Earth Engine, and running it. Running into an error? Check <a href="troubleshooting.html">Troubleshooting</a> first.</p>
+  </main>
+
+  <footer class="site-footer">
+    <p>BL Weather Report &middot; <a href="https://github.com/wildlife-dynamics/bl_weather_report">wildlife-dynamics/bl_weather_report</a> on GitHub</p>
+  </footer>
+</body>
+</html>

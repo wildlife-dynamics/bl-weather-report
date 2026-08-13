@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Guide — BL Weather Report</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="bar">
+      <a class="brand" href="index.html">BL Weather Report</a>
+      <nav>
+        <a href="index.html">Overview</a>
+        <a href="user-guide.html" class="active">User Guide</a>
+        <a href="technical-guide.html">Technical Guide</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+        <a href="https://github.com/wildlife-dynamics/bl_weather_report">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1>BL Weather Report &mdash; User Guide</h1>
+    <p class="lede">This guide walks you through configuring and running the Big Life Weather Report workflow, which ingests rainfall gauge observations from EarthRanger, derives NDVI vegetation condition from Google Earth Engine, and produces an automated weather report and dashboard for the Amboseli ecosystem.</p>
+
+    <h2>What it produces</h2>
+    <ul>
+      <li><strong>Overall rainfall bar chart</strong> &mdash; total millimetres per gauge station for the analysis period</li>
+      <li><strong>Monthly stacked bar chart</strong> &mdash; month-by-month rainfall breakdown per station, ordered by calendar month</li>
+      <li><strong>Rainfall by station summary table</strong> &mdash; sortable, filterable table of total readings per station</li>
+      <li><strong>Interactive rainfall map</strong> &mdash; Amboseli land use, ranch boundaries, and electric fence layers, with a clustered proportional-symbol layer of rainfall readings per station</li>
+      <li><strong>Per-ranch NDVI time-series charts</strong> &mdash; current NDVI overlaid against the historic min/max/mean range, one chart per ranch</li>
+      <li><strong>A data file</strong> &mdash; aggregated station rainfall readings with point geometry (GeoParquet)</li>
+      <li><strong>A Word document report</strong> &mdash; every chart, the map, and all NDVI charts embedded in the Big Life weather report template</li>
+      <li><strong>An interactive dashboard</strong> &mdash; 4 widgets: rainfall map, overall rainfall chart, monthly rainfall chart, and the rainfall-by-station table</li>
+    </ul>
+    <p>The three Amboseli geospatial layers (land use, ranch boundaries &amp; electric fence, conservancy boundaries) and the Word report template are downloaded automatically from Dropbox at run time. No additional setup is required for these.</p>
+
+    <h2>Requirements</h2>
+    <ul>
+      <li>Access to an <strong>EarthRanger</strong> instance with <code>rainfall_rep</code> events logged for the analysis period</li>
+      <li>Access to a <strong>Google Earth Engine</strong> service account with a private key in JSON format</li>
+    </ul>
+
+    <h2 id="load">1. Load the Workflow</h2>
+    <p>In the workflow runner, go to <strong>Workflow Templates</strong> and click <strong>Add Workflow Template</strong>. Paste this repository's URL into the <strong>Github Link</strong> field, then click <strong>Add Template</strong>:</p>
+    <pre><code>https://github.com/wildlife-dynamics/bl_weather_report.git</code></pre>
+    <p>Once added, it appears in the <strong>Workflow Templates</strong> list as <strong>bl_weather_report</strong>. Click the card to open the workflow configuration form. The card may show <strong>Initializing&hellip;</strong> briefly while the environment is set up.</p>
+
+    <h2 id="configure">2. Configure the Workflow</h2>
+
+    <h3 id="connection">Data Source Connections</h3>
+    <p>Navigate to <strong>Data Sources</strong> and click <strong>Connect</strong>. This workflow requires two connections:</p>
+    <table>
+      <thead><tr><th>Data Source Type</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>EarthRanger</td><td>Pull rainfall gauge events (<code>rainfall_rep</code>)</td></tr>
+        <tr><td>Google Earth Engine</td><td>Compute per-ranch NDVI time-series against historic baselines</td></tr>
+      </tbody>
+    </table>
+
+    <h4>EarthRanger</h4>
+    <table>
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Data Source Name</td><td>A label to identify this connection</td></tr>
+        <tr><td>EarthRanger URL</td><td>Your instance URL (e.g. <code>your-site.pamdas.org</code>)</td></tr>
+        <tr><td>EarthRanger Username</td><td>Your EarthRanger username</td></tr>
+        <tr><td>EarthRanger Password</td><td>Your EarthRanger password</td></tr>
+      </tbody>
+    </table>
+    <p>Credentials are not validated at setup time. Any authentication errors will appear when the workflow runs.</p>
+
+    <h4>Google Earth Engine</h4>
+    <table>
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Data Source Name</td><td>A label to identify this connection</td></tr>
+        <tr><td>Private Key</td><td>Browse to your GEE service account private key file (JSON format)</td></tr>
+      </tbody>
+    </table>
+    <p>To generate a private key, follow the instructions in the <a href="https://developers.google.com/earth-engine/guides/service_account">GEE Setup Guide</a>. The key is stored encrypted and used only to authenticate with Google Earth Engine.</p>
+
+    <h3 id="workflow-details">Workflow Details &amp; Time Range</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Workflow Name</td><td>A short name to identify this run</td></tr>
+        <tr><td>Workflow Description</td><td>Optional notes (e.g. month, ranger station, or site name)</td></tr>
+        <tr><td>Timezone</td><td>Select the local timezone (e.g. <code>Africa/Nairobi UTC+03:00</code>)</td></tr>
+        <tr><td>Since</td><td>Start date and time of the analysis period</td></tr>
+        <tr><td>Until</td><td>End date and time of the analysis period</td></tr>
+      </tbody>
+    </table>
+    <p>Rainfall events and NDVI data are both fetched for this window.</p>
+
+    <h3 id="gee-er">Set GEE Connection &amp; Connect to ER</h3>
+    <p>Select the Google Earth Engine data source configured above from the <strong>Set GEE connection</strong> dropdown, and the EarthRanger data source from the <strong>Connect to ER</strong> dropdown (e.g. <code>Amboseli Trust for Elephants</code>).</p>
+
+    <h3 id="ndvi-method">NDVI Method</h3>
+    <p>Choose the MODIS satellite product used for NDVI calculations:</p>
+    <table>
+      <thead><tr><th>Option</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>MODIS MYD13A1 16-Day Composite <em>(default)</em></td><td>Pre-calculated NDVI from 16-day composites. Quality-filtered best-pixel values at 500&nbsp;m resolution with ~0.025 accuracy. Better for phenology studies but may saturate in dense canopies.</td></tr>
+        <tr><td>MODIS MCD43A4 Daily NBAR</td><td>Computes NDVI from NIR/Red bands with view-angle correction for consistent measurements. Higher temporal resolution but more susceptible to cloud gaps.</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="ndvi-trend">NDVI Trend</h3>
+    <p>Configure how historical NDVI data is grouped when computing the baseline statistics (min, max, mean) that the current period is compared against:</p>
+    <table>
+      <thead><tr><th>Grouping Unit</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td>month <em>(default)</em></td><td>Compare against the same calendar month (1&ndash;12)</td></tr>
+        <tr><td>week</td><td>Compare against the same ISO week number (1&ndash;53)</td></tr>
+        <tr><td>day_of_year</td><td>Compare against the same day of year (1&ndash;366)</td></tr>
+        <tr><td>modis_16_day</td><td>Compare against the same MODIS 16-day composite period (0&ndash;22)</td></tr>
+      </tbody>
+    </table>
+    <p>NDVI is calculated separately for each ranch in the Amboseli conservancy boundaries, grouped by the <code>R_NAME</code> field.</p>
+    <p>Once all sections are filled, click <strong>Submit</strong>.</p>
+
+    <h2 id="run">3. Run the Workflow</h2>
+    <p>Once submitted, the runner will:</p>
+    <ol>
+      <li>Download the three Amboseli geospatial layers (land use, ranch boundaries &amp; electric fence, conservancy boundaries) from Dropbox and reproject them to EPSG:4326.</li>
+      <li>Style the land-use layer by category and build the ranch-boundary and electric-fence map layers.</li>
+      <li>Fetch <code>rainfall_rep</code> events from EarthRanger for the specified time range, extract the digital and manual rain-gauge readings from each event's details, and combine them into a single reading per event (falling back to the manual gauge, then to zero).</li>
+      <li>Aggregate rainfall readings by gauge station (sum) and decompose event dates into year, month, and month name for later charting.</li>
+      <li>Render the overall rainfall bar chart, the calendar-ordered monthly stacked bar chart, and the sortable/filterable rainfall-by-station summary table.</li>
+      <li>Build a clustered rainfall reading layer and combine it with the land-use, boundary, and fence layers into an interactive map, automatically framed to the data extent.</li>
+      <li>Split the Amboseli conservancy boundaries by ranch name (<code>R_NAME</code>) and run NDVI analysis per ranch via Google Earth Engine, then render a historic NDVI time-series chart for each ranch.</li>
+      <li>Convert the rainfall charts, the monthly chart, the map, and each ranch's NDVI chart to PNG.</li>
+      <li>Download the Big Life weather report Word template from Dropbox and populate it with the charts, the map, and the per-ranch NDVI charts.</li>
+      <li>Assemble the dashboard with the rainfall map, overall rainfall chart, monthly rainfall chart, and rainfall-by-station table widgets.</li>
+      <li>Save all outputs to the directory specified by <code>ECOSCOPE_WORKFLOWS_RESULTS</code>.</li>
+    </ol>
+
+    <h3 id="output-files">Output Files</h3>
+    <p>All outputs are written to <code>$ECOSCOPE_WORKFLOWS_RESULTS/</code>.</p>
+    <table>
+      <thead><tr><th>File</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>overall_rainfall_station_readings</code> (GeoParquet)</td><td>Total rainfall per station, with point geometry</td></tr>
+        <tr><td><code>rainfall_readings_over_time.html</code> / <code>.png</code></td><td>Overall rainfall bar chart by station</td></tr>
+        <tr><td><code>monthly_rainfall_readings.html</code> / <code>.png</code></td><td>Monthly stacked rainfall bar chart, ordered by calendar month</td></tr>
+        <tr><td><code>rainfall_by_station_summary_table.html</code></td><td>Sortable, filterable rainfall-by-station summary table</td></tr>
+        <tr><td><code>rainfall_map.html</code> / <code>.png</code></td><td>Interactive map: land use, ranch boundaries, electric fence, and rainfall readings</td></tr>
+        <tr><td><code>&lt;ranch&gt;.html</code> / <code>.png</code> (one per ranch)</td><td>Historic NDVI time-series chart &mdash; current NDVI vs. historic min/max/mean</td></tr>
+        <tr><td><code>overall_report.docx</code></td><td>Final populated Big Life weather report Word document</td></tr>
+      </tbody>
+    </table>
+
+    <p>Something not working as expected? See <a href="troubleshooting.html">Troubleshooting</a>. For a deeper look at the pipeline internals, see the <a href="technical-guide.html">Technical Guide</a>.</p>
+  </main>
+
+  <footer class="site-footer">
+    <p>BL Weather Report &middot; <a href="https://github.com/wildlife-dynamics/bl_weather_report">wildlife-dynamics/bl_weather_report</a> on GitHub</p>
+  </footer>
+</body>
+</html>
