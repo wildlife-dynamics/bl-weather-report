@@ -42,8 +42,6 @@ https://github.com/wildlife-dynamics/bl_weather_report.git
 
 Then click **Add Template**.
 
-![Add Workflow Template](data/screenshots/add_workflow.png)
-
 ---
 
 ### Step 2 — Configure Connection
@@ -56,8 +54,6 @@ Navigate to **Data Sources** and click **Connect**. A dialog will appear prompti
 | **Google Earth Engine** | Compute per-ranch NDVI time-series against historic baselines |
 
 Select **EarthRanger** first and complete Step 3, then repeat and select **Google Earth Engine** for Step 4.
-
-![Configure Connection](data/screenshots/configure_connection.png)
 
 ---
 
@@ -73,8 +69,6 @@ After selecting **EarthRanger** in Step 2, fill in the connection form:
 
 Click **Connect** to save.
 
-![EarthRanger Connection](data/screenshots/er_connection.png)
-
 ---
 
 ### Step 4 — Add a Google Earth Engine Connection
@@ -88,8 +82,6 @@ After selecting **Google Earth Engine** in Step 2, fill in the connection form:
 
 Click **Connect** to save.
 
-![Google Earth Engine Connection](data/screenshots/gee_connection.png)
-
 ---
 
 ### Step 5 — Select the Workflow
@@ -97,8 +89,6 @@ Click **Connect** to save.
 After the template is added, it appears in the **Workflow Templates** list as **bl_weather_report**. Click it to open the workflow configuration form.
 
 > The card may show **Initializing…** briefly while the environment is set up.
-
-![Select Workflow Template](data/screenshots/select_workflow.png)
 
 ---
 
@@ -123,8 +113,6 @@ The configuration form opens with two sections at the top.
 
 Rainfall events and NDVI data are both fetched for this window.
 
-![Set Workflow Details and Time Range](data/screenshots/workflow_details_time_range.png)
-
 ---
 
 ### Step 7 — Set GEE Connection, Connect to ER, and NDVI Method
@@ -148,8 +136,6 @@ Choose the MODIS satellite product to use for NDVI calculations:
 | **MODIS MYD13A1 16-Day Composite** *(default)* | Pre-calculated NDVI from 16-day composites. Quality-filtered best-pixel values at 500 m resolution with ~0.025 accuracy. Better for phenology studies but may saturate in dense canopies. |
 | **MODIS MCD43A4 Daily NBAR** | Computes NDVI from NIR/Red bands with view-angle correction for consistent measurements. Higher temporal resolution but more susceptible to cloud gaps. |
 
-![Set GEE Connection, Connect to ER, and NDVI Method](data/screenshots/set_gee_connection_er_ndvi_method.png)
-
 ---
 
 ### Step 8 — NDVI Trend
@@ -164,8 +150,6 @@ Configure how historical NDVI data is grouped when computing the baseline statis
 | **modis_16_day** | Compare against the same MODIS 16-day composite period (0–22) |
 
 NDVI is calculated separately for each ranch in the Amboseli conservancy boundaries, grouped by the `R_NAME` field.
-
-![NDVI Method and NDVI Trend](data/screenshots/ndvi_method_trend_persist.png)
 
 ---
 
