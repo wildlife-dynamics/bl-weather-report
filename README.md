@@ -1,6 +1,6 @@
 # BL Weather Report — User Guide
 
-This guide walks you through configuring and running the Big Life Weather Report workflow, which ingests rainfall gauge observations from EarthRanger, derives NDVI vegetation condition from Google Earth Engine, and produces an automated weather report for the Amboseli ecosystem.
+This guide walks you through configuring and running the Big Life Weather Report workflow, which ingests rainfall gauge observations from EarthRanger, derives NDVI vegetation condition from Google Earth Engine, and produces an automated weather report and dashboard for the Amboseli ecosystem.
 
 ---
 
@@ -9,11 +9,15 @@ This guide walks you through configuring and running the Big Life Weather Report
 The workflow delivers, for each run:
 
 - An **overall rainfall bar chart** — total millimetres per gauge station for the analysis period
-- A **monthly stacked bar chart** — month-by-month rainfall breakdown per station
-- An **interactive rainfall map** — proportional-symbol map of readings across stations
-- **Per-ranch NDVI time-series charts** — current NDVI overlaid against the historic min/max/mean range
-- **Data files** — aggregated station readings (GeoPackage) and NDVI time-series (CSV) per ranch
-- A **Word document report** — all charts and the map embedded in the Big Life weather report template
+- A **monthly stacked bar chart** — month-by-month rainfall breakdown per station, ordered by calendar month
+- A **rainfall by station summary table** — sortable, filterable table of total readings per station
+- An **interactive rainfall map** — Amboseli land use, ranch boundaries, and electric fence layers, with a clustered proportional-symbol layer of rainfall readings per station
+- **Per-ranch NDVI time-series charts** — current NDVI overlaid against the historic min/max/mean range, one chart per ranch in the Amboseli conservancy boundaries
+- A **data file** — aggregated station rainfall readings with point geometry (GeoParquet)
+- A **Word document report** — all charts and the map embedded in the Big Life weather report template, downloaded automatically from Dropbox
+- An **interactive dashboard** — widgets for the rainfall map, the overall rainfall chart, the monthly rainfall chart, and the rainfall-by-station table (NDVI charts are not included on the dashboard — they appear only in the Word report)
+
+The three Amboseli geospatial layers (land use, ranch boundaries & electric fence, conservancy boundaries) and the Word report template are downloaded automatically from Dropbox at run time. No additional setup is required for these.
 
 ---
 
@@ -148,11 +152,9 @@ Choose the MODIS satellite product to use for NDVI calculations:
 
 ---
 
-### Step 8 — NDVI Trend and Persist NDVI Data
+### Step 8 — NDVI Trend
 
-**NDVI Trend**
-
-Configure how historical NDVI data is grouped when computing the baseline statistics (min, max, mean) to compare against the current period:
+Configure how historical NDVI data is grouped when computing the baseline statistics (min, max, mean) that the current period is compared against:
 
 | Grouping Unit | Behaviour |
 |--------------|-----------|
@@ -161,15 +163,9 @@ Configure how historical NDVI data is grouped when computing the baseline statis
 | **day_of_year** | Compare against the same day of year (1–366) |
 | **modis_16_day** | Compare against the same MODIS 16-day composite period (0–22) |
 
-**Persist NDVI Data**
+NDVI is calculated separately for each ranch in the Amboseli conservancy boundaries, grouped by the `R_NAME` field.
 
-| Field | Default | Description |
-|-------|---------|-------------|
-| Filetypes | `csv` | Output format for the per-ranch NDVI time-series data file |
-
-The NDVI data file is always written for each ranch even if other parts of the workflow are skipped.
-
-![NDVI Trend and Persist NDVI Data](data/screenshots/ndvi_method_trend_persist.png)
+![NDVI Method and NDVI Trend](data/screenshots/ndvi_method_trend_persist.png)
 
 ---
 
@@ -177,15 +173,17 @@ The NDVI data file is always written for each ranch even if other parts of the w
 
 Once all parameters are configured, click **Submit**. The runner will:
 
-1. Download the three Amboseli geospatial layers (land use, ranch boundaries, electric fence) from Dropbox.
-2. Fetch `rainfall_rep` events from EarthRanger for the specified time range.
-3. Normalise, clean, and aggregate rainfall readings by gauge station.
-4. Render the overall rainfall bar chart, monthly stacked bar chart, and rainfall map.
-5. Split the Amboseli conservancy boundaries by ranch name and run NDVI analysis per ranch via Google Earth Engine.
-6. Render historic NDVI time-series charts per ranch.
-7. Look up the current EarthRanger user's name for report attribution.
-8. Populate the Big Life weather report Word template with all charts and the map.
-9. Save all outputs to the directory specified by `ECOSCOPE_WORKFLOWS_RESULTS`.
+1. Download the three Amboseli geospatial layers (land use, ranch boundaries & electric fence, conservancy boundaries) from Dropbox and reproject them to EPSG:4326.
+2. Style the land-use layer by category and build the ranch-boundary and electric-fence map layers.
+3. Fetch `rainfall_rep` events from EarthRanger for the specified time range, extract the digital and manual rain-gauge readings from each event's details, and combine them into a single reading per event (falling back to the manual gauge, then to zero).
+4. Aggregate rainfall readings by gauge station (sum) and decompose event dates into year, month, and month name for later charting.
+5. Render the overall rainfall bar chart, the calendar-ordered monthly stacked bar chart, and the sortable/filterable rainfall-by-station summary table.
+6. Build a clustered rainfall reading layer and combine it with the land-use, boundary, and fence layers into an interactive map, automatically framed to the data extent.
+7. Split the Amboseli conservancy boundaries by ranch name (`R_NAME`) and run NDVI analysis per ranch via Google Earth Engine, then render a historic NDVI time-series chart for each ranch.
+8. Convert the rainfall charts, the monthly chart, the map, and each ranch's NDVI chart to PNG.
+9. Download the Big Life weather report Word template from Dropbox and populate it with the charts, the map, and the per-ranch NDVI charts.
+10. Assemble the dashboard with the rainfall map, overall rainfall chart, monthly rainfall chart, and rainfall-by-station table widgets.
+11. Save all outputs to the directory specified by `ECOSCOPE_WORKFLOWS_RESULTS`.
 
 ---
 
@@ -195,11 +193,10 @@ All outputs are written to `$ECOSCOPE_WORKFLOWS_RESULTS/`:
 
 | File | Description |
 |------|-------------|
-| `overall_rainfall_station_readings.gpkg` | Total rainfall per station with point geometry |
-| `monthly_rainfall_station_readings.gpkg` | Total rainfall per station per month |
-| `ndvi_<ranch>.csv` | NDVI time-series with historic min/max/mean per ranch |
-| `rainfall_readings_over_time.html` / `.png` | Overall rainfall bar chart |
-| `monthly_rainfall_readings.html` / `.png` | Monthly stacked bar chart |
-| `rainfall_map.html` / `.png` | Interactive proportional-symbol rainfall map |
-| `<ranch>_ndvi.html` / `.png` | Historic NDVI time-series chart per ranch |
-| `big_life_weather_report.docx` | Final populated Word weather report |
+| `overall_rainfall_station_readings` (GeoParquet) | Total rainfall per station, with point geometry |
+| `rainfall_readings_over_time.html` / `.png` | Overall rainfall bar chart by station |
+| `monthly_rainfall_readings.html` / `.png` | Monthly stacked rainfall bar chart, ordered by calendar month |
+| `rainfall_by_station_summary_table.html` | Sortable, filterable rainfall-by-station summary table |
+| `rainfall_map.html` / `.png` | Interactive map: land use, ranch boundaries, electric fence, and rainfall readings |
+| `<ranch>.html` / `.png` (one per ranch) | Historic NDVI time-series chart — current NDVI vs. historic min/max/mean |
+| `overall_report.docx` | Final populated Big Life weather report Word document |

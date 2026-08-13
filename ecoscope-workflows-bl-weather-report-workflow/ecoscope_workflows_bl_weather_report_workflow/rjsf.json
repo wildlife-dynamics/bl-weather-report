@@ -127,32 +127,6 @@
       "required": [],
       "type": "object",
       "title": "NDVI Trend"
-    },
-    "persist_ndvi_data": {
-      "additionalProperties": false,
-      "properties": {
-        "filetypes": {
-          "default": [
-            "csv"
-          ],
-          "items": {
-            "enum": [
-              "csv",
-              "gpkg",
-              "geoparquet",
-              "parquet"
-            ],
-            "type": "string"
-          },
-          "title": "Filetypes",
-          "type": "array",
-          "description": "The output format",
-          "uniqueItems": true
-        }
-      },
-      "required": [],
-      "type": "object",
-      "title": "Persist NDVI Data"
     }
   },
   "$defs": {
@@ -232,8 +206,7 @@
       "gee_client",
       "er_client_name",
       "ndvi_method",
-      "calculate_ndvi",
-      "persist_ndvi_data"
+      "calculate_ndvi"
     ]
   },
   "additionalProperties": false
