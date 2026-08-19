@@ -469,6 +469,9 @@ workflow:
   - name: Create rainfall chart widget
     id: rainfall_chart_widget
     task: create_plot_widget_single_view
+    skipif:
+      conditions:
+        - never
     partial:
       title: "Rainfall Readings by Station"
       data: ${{ workflow.persist_rainfall_url.return }}
@@ -507,6 +510,9 @@ workflow:
   - name: Create rainfall by station table widget
     id: rainfall_station_table_widget
     task: create_table_widget_single_view
+    skipif:
+      conditions:
+        - never
     partial:
       title: "Rainfall by Station Summary"
       data: ${{ workflow.rainfall_station_table_html_url.return }}
@@ -580,6 +586,9 @@ workflow:
   - name: Create monthly rainfall chart widget
     id: monthly_rainfall_chart_widget
     task: create_plot_widget_single_view
+    skipif:
+      conditions:
+        - never
     partial:
       title: "Monthly Rainfall Readings"
       data: ${{ workflow.persist_monthly_rainfall_url.return }}
@@ -683,6 +692,9 @@ workflow:
   - name: Create rainfall map widget
     id: rainfall_map_widget
     task: create_map_widget_single_view
+    skipif:
+      conditions:
+        - never
     partial:
       title: "Rainfall Map"
       data: ${{ workflow.persist_rainfall_urls.return }}
