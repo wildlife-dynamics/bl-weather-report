@@ -18,7 +18,7 @@
       ],
       "type": "object",
       "description": "Add information that will help to differentiate this workflow from another.",
-      "title": "Set Workflow Details"
+      "title": "Workflow Details"
     },
     "time_range": {
       "additionalProperties": false,
@@ -73,7 +73,7 @@
         "data_source"
       ],
       "type": "object",
-      "title": "Set GEE connection"
+      "title": "Connect to Google Earth Engine"
     },
     "er_client_name": {
       "additionalProperties": false,
@@ -88,7 +88,7 @@
         "data_source"
       ],
       "type": "object",
-      "title": "Connect to ER"
+      "title": "Connect to EarthRanger"
     },
     "ndvi_method": {
       "additionalProperties": false,

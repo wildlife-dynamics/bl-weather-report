@@ -37,7 +37,7 @@ Before running the workflow, ensure you have:
 In the workflow runner, go to **Workflow Templates** and click **Add Workflow Template**. Paste the GitHub repository URL into the **Github Link** field:
 
 ```
-https://github.com/wildlife-dynamics/bl_weather_report.git
+https://github.com/wildlife-dynamics/bl-weather-report.git
 ```
 
 Then click **Add Template**.
@@ -92,11 +92,11 @@ After the template is added, it appears in the **Workflow Templates** list as **
 
 ---
 
-### Step 6 — Set Workflow Details and Time Range
+### Step 6 — Workflow Details and Time Range
 
 The configuration form opens with two sections at the top.
 
-**Set Workflow Details**
+**Workflow Details**
 
 | Field | Description |
 |-------|-------------|
@@ -115,15 +115,15 @@ Rainfall events and NDVI data are both fetched for this window.
 
 ---
 
-### Step 7 — Set GEE Connection, Connect to ER, and NDVI Method
+### Step 7 — Connect to Google Earth Engine, Connect to EarthRanger, and NDVI Method
 
 Scroll down to configure the next three sections.
 
-**Set GEE connection**
+**Connect to Google Earth Engine**
 
 Select the Google Earth Engine data source configured in Step 4 from the **Data Source** dropdown.
 
-**Connect to ER**
+**Connect to EarthRanger**
 
 Select the EarthRanger data source configured in Step 3 from the **Data Source** dropdown (e.g. `Amboseli Trust for Elephants`).
 
