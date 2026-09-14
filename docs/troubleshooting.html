@@ -24,106 +24,185 @@
     <h1>Troubleshooting</h1>
     <p class="lede">Common issues encountered while configuring, running, or contributing to the BL Weather Report workflow, and how to resolve them. If your issue isn't listed here, open an issue on <a href="https://github.com/wildlife-dynamics/bl-weather-report/issues">GitHub</a>.</p>
 
-    <h2>Configuration &amp; Connections</h2>
-
-    <div class="error-block">
-      <p class="symptom">Workflow errors out with no rainfall events found</p>
-      <p>The rainfall-event fetch sets <code>raise_on_empty: true</code>, so if EarthRanger has zero <code>rainfall_rep</code> events for your selected <a href="user-guide.html#workflow-details">Time Range</a>, the workflow raises an explicit error rather than completing with empty outputs. Widen the time range or confirm the events exist under that event type in EarthRanger.</p>
+    <div class="tb-controls">
+      <input type="search" id="tb-search" class="tb-search-input" placeholder="Search error messages, symptoms, task names…" autocomplete="off" />
+      <div class="tb-chips" id="tb-chips">
+        <button type="button" class="tb-chip active" data-category="all">All</button>
+        <button type="button" class="tb-chip" data-category="config">Configuration &amp; Connections</button>
+        <button type="button" class="tb-chip" data-category="charts">Map &amp; Charts</button>
+        <button type="button" class="tb-chip" data-category="report">Report &amp; Dashboard</button>
+        <button type="button" class="tb-chip" data-category="ci">Contributing &amp; CI</button>
+      </div>
+      <p class="tb-count" id="tb-count"></p>
     </div>
 
-    <div class="error-block">
-      <p class="symptom">EarthRanger connection fails or times out</p>
-      <p>Verify the server URL, username, and password configured in the <a href="user-guide.html#connection">Data Source Connection</a>. Confirm you can log into that same EarthRanger instance directly in a browser with the same credentials. Credentials aren't validated at setup time, so an invalid password only surfaces as an error once the workflow actually runs.</p>
-    </div>
+    <p class="tb-no-results" id="tb-no-results" hidden>No matching issues. Try a different search term, or <a href="https://github.com/wildlife-dynamics/bl-weather-report/issues">open an issue on GitHub</a>.</p>
 
-    <div class="error-block">
-      <p class="symptom">Google Earth Engine connection fails, or NDVI charts are missing</p>
-      <p>Confirm the private key file uploaded in the <a href="user-guide.html#connection">Google Earth Engine connection</a> is a valid service-account JSON key with Earth Engine access enabled. If the key is invalid or lacks permissions, <code>calculate_ndvi_range</code> fails for every ranch and no NDVI charts are produced.</p>
-    </div>
+    <section class="tb-category" data-category="config">
+      <h2>Configuration &amp; Connections</h2>
 
-    <div class="error-block">
-      <p class="symptom">Amboseli geospatial layers or the Word template fail to download</p>
-      <p>The three Amboseli GeoPackages and the Word report template are fetched from fixed Dropbox share links in <code>spec.yaml</code>. These links carry an expiring share token (<code>st=</code> parameter); if a link has been rotated or revoked on Dropbox's side, <code>fetch_and_persist_file</code> will exhaust its 3 retries and fail. This isn't a workflow configuration issue &mdash; the URLs in <code>spec.yaml</code> would need to be refreshed.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Workflow errors out with no rainfall events found</p>
+        <p>The rainfall-event fetch (task id <code>get_events_data</code>) sets <code>raise_on_empty: true</code>, so if EarthRanger has zero <code>rainfall_rep</code> events for your selected <a href="user-guide.html#workflow-details">Time Range</a>, the workflow raises an explicit error rather than completing with empty outputs. You'll see this surface as:</p>
+        <pre><code>Task instance 'get_events_data' raised ValueError('No data returned from EarthRanger for get_events')</code></pre>
+        <p>This means EarthRanger genuinely returned no data for the period you selected &mdash; it isn't a connection or permissions problem. <strong>Widen the time range</strong> and re-run, or confirm <code>rainfall_rep</code> events exist for that period directly in EarthRanger.</p>
+      </div>
 
-    <h2>Map &amp; Charts</h2>
+      <div class="error-block">
+        <p class="symptom">EarthRanger connection fails or times out</p>
+        <p>Verify the server URL, username, and password configured in the <a href="user-guide.html#connection">Data Source Connection</a>. Confirm you can log into that same EarthRanger instance directly in a browser with the same credentials. Credentials aren't validated at setup time, so an invalid password only surfaces as an error once the workflow actually runs.</p>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom">Rainfall map PNG is blank, cut off, or missing in the Word report</p>
-      <p>The map's <code>html_to_png</code> conversion (<code>convert_map_png</code>) waits 40&nbsp;000&nbsp;ms for the basemap tiles to load before capturing the screenshot &mdash; far longer than the 10&nbsp;ms wait used for the plotly charts, which render client-side without external tile requests. On a slow network this can still be insufficient; if the map image is consistently incomplete, the tile servers may be slow or rate-limiting requests during that run.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Google Earth Engine connection fails, or NDVI charts are missing</p>
+        <p>Confirm the private key file uploaded in the <a href="user-guide.html#connection">Google Earth Engine connection</a> is a valid service-account JSON key with Earth Engine access enabled. If the key is invalid or lacks permissions, <code>calculate_ndvi_range</code> fails for every ranch and no NDVI charts are produced.</p>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom">Some rainfall stations are missing from a chart or the map</p>
-      <p>Rainfall is aggregated by <code>raingauge_station</code>, taken from the event detail field <em>Rain gauge station</em>. If an event's details don't include that field (or it's blank), the row won't be attributed to a named station in the aggregated output &mdash; check the underlying <code>rainfall_rep</code> event in EarthRanger for a missing or malformed detail value.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Amboseli geospatial layers or the Word template fail to download</p>
+        <p>The three Amboseli GeoPackages and the Word report template are fetched from fixed Dropbox share links in <code>spec.yaml</code>. These links carry an expiring share token (<code>st=</code> parameter); if a link has been rotated or revoked on Dropbox's side, <code>fetch_and_persist_file</code> will exhaust its 3 retries and fail. This isn't a workflow configuration issue &mdash; the URLs in <code>spec.yaml</code> would need to be refreshed.</p>
+      </div>
+    </section>
 
-    <div class="error-block">
-      <p class="symptom">A station's rainfall total looks too low despite readings being logged</p>
-      <p>Each event's overall reading combines the digital and manual gauge values with the digital reading taking priority (<code>digital_raingauge</code> falling back to <code>manual_raingauge</code>, both falling back to <code>0</code>). If a ranger logs a value in the wrong field, or a non-numeric value is entered, <code>convert_columns_to_float</code> coerces it to <code>0</code> rather than raising an error &mdash; check the raw event details for that reading.</p>
-    </div>
+    <section class="tb-category" data-category="charts">
+      <h2>Map &amp; Charts</h2>
 
-    <div class="error-block">
-      <p class="symptom">Monthly stacked chart shows months out of order or missing colours</p>
-      <p>Month order comes from a dedicated calendar-month lookup task (not derived from the data), so months always appear Jan&rarr;Dec regardless of which months have data. Colours come from the <code>Blues_r</code> colormap applied to the month name column &mdash; if this looks wrong, check that <code>time</code> values parsed correctly during date decomposition rather than the chart configuration.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Rainfall map PNG is blank, cut off, or missing in the Word report</p>
+        <p>The map's <code>html_to_png</code> conversion (<code>convert_map_png</code>) waits 40&nbsp;000&nbsp;ms for the basemap tiles to load before capturing the screenshot &mdash; far longer than the 10&nbsp;ms wait used for the plotly charts, which render client-side without external tile requests. On a slow network this can still be insufficient; if the map image is consistently incomplete, the tile servers may be slow or rate-limiting requests during that run.</p>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom">NDVI chart is missing for one ranch, or shows no historic band</p>
-      <p>NDVI is calculated separately per ranch by splitting the Amboseli conservancy boundaries on the <code>R_NAME</code> column. If a ranch's polygon is very small, has invalid geometry, or Earth Engine returns no imagery for the selected <a href="user-guide.html#ndvi-method">NDVI Method</a> and time range, that ranch's chart can come back empty while others succeed &mdash; this is expected fan-out behaviour, not a workflow-wide failure.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Some rainfall stations are missing from a chart or the map</p>
+        <p>Rainfall is aggregated by <code>raingauge_station</code>, taken from the event detail field <em>Rain gauge station</em>. If an event's details don't include that field (or it's blank), the row won't be attributed to a named station in the aggregated output &mdash; check the underlying <code>rainfall_rep</code> event in EarthRanger for a missing or malformed detail value.</p>
+      </div>
 
-    <h2>Report &amp; Dashboard</h2>
+      <div class="error-block">
+        <p class="symptom">A station's rainfall total looks too low despite readings being logged</p>
+        <p>Each event's overall reading combines the digital and manual gauge values with the digital reading taking priority (<code>digital_raingauge</code> falling back to <code>manual_raingauge</code>, both falling back to <code>0</code>). If a ranger logs a value in the wrong field, or a non-numeric value is entered, <code>convert_columns_to_float</code> coerces it to <code>0</code> rather than raising an error &mdash; check the raw event details for that reading.</p>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom">Word report is missing an image, or fails to generate</p>
-      <p><code>generate_weather_report</code> runs with <code>validate_images: true</code>, which checks that every expected chart/map/NDVI image exists before populating the template. If any upstream chart or PNG conversion failed or was skipped (e.g. due to an empty rainfall dataset), report generation will fail rather than produce a document with blank placeholders.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Monthly stacked chart shows months out of order or missing colours</p>
+        <p>Month order comes from a dedicated calendar-month lookup task (not derived from the data), so months always appear Jan&rarr;Dec regardless of which months have data. Colours come from the <code>Blues_r</code> colormap applied to the month name column &mdash; if this looks wrong, check that <code>time</code> values parsed correctly during date decomposition rather than the chart configuration.</p>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom">Word report always says "Generated by Ecoscope"</p>
-      <p>This is expected &mdash; <code>generated_by</code> is a fixed string in <code>spec.yaml</code>, not looked up from the EarthRanger user who ran the workflow. If per-user attribution is needed, this would require a change to <code>spec.yaml</code>.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">NDVI chart is missing for one ranch, or shows no historic band</p>
+        <p>NDVI is calculated separately per ranch by splitting the Amboseli conservancy boundaries on the <code>R_NAME</code> column. If a ranch's polygon is very small, has invalid geometry, or Earth Engine returns no imagery for the selected <a href="user-guide.html#ndvi-method">NDVI Method</a> and time range, that ranch's chart can come back empty while others succeed &mdash; this is expected fan-out behaviour, not a workflow-wide failure.</p>
+      </div>
+    </section>
 
-    <div class="error-block">
-      <p class="symptom">Dashboard is missing the NDVI charts</p>
-      <p>This is expected &mdash; the dashboard (<code>gather_dashboard</code>) is wired to exactly four widgets: the rainfall map, the overall rainfall chart, the monthly rainfall chart, and the rainfall-by-station table. Per-ranch NDVI charts are written as standalone output files and embedded in the Word report only.</p>
-    </div>
+    <section class="tb-category" data-category="report">
+      <h2>Report &amp; Dashboard</h2>
 
-    <div class="error-block">
-      <p class="symptom">No outputs written / can't find results</p>
-      <p>All outputs are written to the directory specified by the <code>ECOSCOPE_WORKFLOWS_RESULTS</code> environment variable. Confirm it's set and points to a directory the workflow process can write to.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Word report is missing an image, or fails to generate</p>
+        <p><code>generate_weather_report</code> runs with <code>validate_images: true</code>, which checks that every expected chart/map/NDVI image exists before populating the template. If any upstream chart or PNG conversion failed or was skipped (e.g. due to an empty rainfall dataset), report generation will fail rather than produce a document with blank placeholders.</p>
+      </div>
 
-    <h2>Contributing &amp; CI</h2>
-    <p>These apply if you're modifying the workflow itself (<code>spec.yaml</code>, <code>test-cases.yaml</code>, or the generated <code>ecoscope-workflows-bl-weather-report-workflow/</code> directory) and opening a pull request.</p>
+      <div class="error-block">
+        <p class="symptom">Word report always says "Generated by Ecoscope"</p>
+        <p>This is expected &mdash; <code>generated_by</code> is a fixed string in <code>spec.yaml</code>, not looked up from the EarthRanger user who ran the workflow. If per-user attribution is needed, this would require a change to <code>spec.yaml</code>.</p>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom"><code>Generated files differ from committed files in ecoscope-workflows-bl-weather-report-workflow</code></p>
-      <p>The generated workflow directory is out of sync with <code>spec.yaml</code>. Run the recompile script locally and commit the result:</p>
-      <pre><code>pixi run --manifest-path pixi.toml --locked bash -c "./dev/recompile.sh --update"</code></pre>
-    </div>
+      <div class="error-block">
+        <p class="symptom">Dashboard is missing the NDVI charts</p>
+        <p>This is expected &mdash; the dashboard (<code>gather_dashboard</code>) is wired to exactly four widgets: the rainfall map, the overall rainfall chart, the monthly rainfall chart, and the rainfall-by-station table. Per-ranch NDVI charts are written as standalone output files and embedded in the Word report only.</p>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom"><code>test-cases.yaml</code> references a <code>calculator</code> task that doesn't exist in this workflow</p>
-      <p>The current <code>test-cases.yaml</code> still contains <code>calculator</code> parameters (<code>a</code>, <code>b</code>, <code>operation</code>) left over from the workflow scaffold &mdash; <code>spec.yaml</code> has no task with that id. If you're updating test cases, replace these with parameters for the tasks this workflow actually exposes (<code>workflow_details</code>, <code>time_range</code>, <code>gee_client</code>, <code>er_client_name</code>, <code>ndvi_method</code>, and the NDVI trend grouping unit).</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom">No outputs written / can't find results</p>
+        <p>All outputs are written to the directory specified by the <code>ECOSCOPE_WORKFLOWS_RESULTS</code> environment variable. Confirm it's set and points to a directory the workflow process can write to.</p>
+      </div>
+    </section>
 
-    <div class="error-block">
-      <p class="symptom"><code>Found wildcard version (*) in requirements</code> or <code>Found local file channel (file://) in requirements</code></p>
-      <p>In <code>spec.yaml</code>, every dependency under <code>requirements</code> must pin an exact version and use a remote conda channel &mdash; wildcard versions and local <code>file://</code> channels are only valid for local development, not for CI using published packages.</p>
-    </div>
+    <section class="tb-category" data-category="ci">
+      <h2>Contributing &amp; CI</h2>
+      <p>These apply if you're modifying the workflow itself (<code>spec.yaml</code>, <code>test-cases.yaml</code>, or the generated <code>ecoscope-workflows-bl-weather-report-workflow/</code> directory) and opening a pull request.</p>
 
-    <div class="error-block">
-      <p class="symptom"><code>VERSION.yaml (...) must be greater than main branch (...)</code></p>
-      <p>Bump <code>MAJ</code>/<code>MIN</code>/<code>PATCH</code> in <code>ecoscope-workflows-bl-weather-report-workflow/VERSION.yaml</code> so it's strictly greater than the version on <code>main</code> before opening or updating a PR.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom"><code>Generated files differ from committed files in ecoscope-workflows-bl-weather-report-workflow</code></p>
+        <p>The generated workflow directory is out of sync with <code>spec.yaml</code>. Run the recompile script locally and commit the result:</p>
+        <pre><code>pixi run --manifest-path pixi.toml --locked bash -c "./dev/recompile.sh --update"</code></pre>
+      </div>
 
-    <div class="error-block">
-      <p class="symptom">Workflow tests fail in CI but pass locally (or vice versa)</p>
-      <p><code>test.yml</code> runs test cases against all of <code>ubuntu-latest</code>, <code>macos-latest</code>, and <code>windows-latest</code>. If a test only fails on CI, check whether it depends on EarthRanger credentials or the Earth Engine key (<code>EE_KEY_JSON</code>) being available as secrets, or on OS-specific path handling.</p>
-    </div>
+      <div class="error-block">
+        <p class="symptom"><code>test-cases.yaml</code> references a <code>calculator</code> task that doesn't exist in this workflow</p>
+        <p>The current <code>test-cases.yaml</code> still contains <code>calculator</code> parameters (<code>a</code>, <code>b</code>, <code>operation</code>) left over from the workflow scaffold &mdash; <code>spec.yaml</code> has no task with that id. If you're updating test cases, replace these with parameters for the tasks this workflow actually exposes (<code>workflow_details</code>, <code>time_range</code>, <code>gee_client</code>, <code>er_client_name</code>, <code>ndvi_method</code>, and the NDVI trend grouping unit).</p>
+      </div>
+
+      <div class="error-block">
+        <p class="symptom"><code>Found wildcard version (*) in requirements</code> or <code>Found local file channel (file://) in requirements</code></p>
+        <p>In <code>spec.yaml</code>, every dependency under <code>requirements</code> must pin an exact version and use a remote conda channel &mdash; wildcard versions and local <code>file://</code> channels are only valid for local development, not for CI using published packages.</p>
+      </div>
+
+      <div class="error-block">
+        <p class="symptom"><code>VERSION.yaml (...) must be greater than main branch (...)</code></p>
+        <p>Bump <code>MAJ</code>/<code>MIN</code>/<code>PATCH</code> in <code>ecoscope-workflows-bl-weather-report-workflow/VERSION.yaml</code> so it's strictly greater than the version on <code>main</code> before opening or updating a PR.</p>
+      </div>
+
+      <div class="error-block">
+        <p class="symptom">Workflow tests fail in CI but pass locally (or vice versa)</p>
+        <p><code>test.yml</code> runs test cases against all of <code>ubuntu-latest</code>, <code>macos-latest</code>, and <code>windows-latest</code>. If a test only fails on CI, check whether it depends on EarthRanger credentials or the Earth Engine key (<code>EE_KEY_JSON</code>) being available as secrets, or on OS-specific path handling.</p>
+      </div>
+    </section>
   </main>
+
+  <script>
+    (function () {
+      var searchInput = document.getElementById('tb-search');
+      var chips = document.querySelectorAll('.tb-chip');
+      var categories = document.querySelectorAll('.tb-category');
+      var noResults = document.getElementById('tb-no-results');
+      var countEl = document.getElementById('tb-count');
+      var activeCategory = 'all';
+
+      function normalize(text) {
+        return text.toLowerCase();
+      }
+
+      function applyFilters() {
+        var query = normalize(searchInput.value.trim());
+        var totalVisible = 0;
+
+        categories.forEach(function (section) {
+          var sectionCategory = section.getAttribute('data-category');
+          var categoryMatches = activeCategory === 'all' || activeCategory === sectionCategory;
+          var visibleInSection = 0;
+
+          section.querySelectorAll('.error-block').forEach(function (block) {
+            var text = normalize(block.textContent);
+            var textMatches = query === '' || text.indexOf(query) !== -1;
+            var show = categoryMatches && textMatches;
+            block.hidden = !show;
+            if (show) visibleInSection++;
+          });
+
+          section.hidden = !categoryMatches || visibleInSection === 0;
+          totalVisible += visibleInSection;
+        });
+
+        noResults.hidden = totalVisible !== 0;
+        countEl.textContent = query || activeCategory !== 'all'
+          ? totalVisible + ' issue' + (totalVisible === 1 ? '' : 's') + ' found'
+          : '';
+      }
+
+      searchInput.addEventListener('input', applyFilters);
+
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          chips.forEach(function (c) { c.classList.remove('active'); });
+          chip.classList.add('active');
+          activeCategory = chip.getAttribute('data-category');
+          applyFilters();
+        });
+      });
+
+      applyFilters();
+    })();
+  </script>
 
   <footer class="site-footer">
     <p>BL Weather Report &middot; <a href="https://github.com/wildlife-dynamics/bl-weather-report">wildlife-dynamics/bl-weather-report</a> on GitHub</p>

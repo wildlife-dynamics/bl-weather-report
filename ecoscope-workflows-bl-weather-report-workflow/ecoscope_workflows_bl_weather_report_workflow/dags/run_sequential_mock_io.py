@@ -952,7 +952,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
                 "title_x": 0.01,
                 "title_y": 0.95,
                 "showlegend": False,
-                "font_size": 11,
+                "font_size": 10,
                 "font_color": "#222222",
                 "plot_bgcolor": "#f5f5f5",
                 "xaxis": {"title": "Stations", "range": None},
@@ -1029,6 +1029,33 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         .call()
     )
 
+    rename_rainfall_table_columns = (
+        task(map_columns)
+        .validate()
+        .set_task_instance_id("rename_rainfall_table_columns")
+        .handle_errors()
+        .with_tracing()
+        .skipif(
+            conditions=[
+                any_is_empty_df,
+                any_dependency_skipped,
+            ],
+            unpack_depth=1,
+        )
+        .partial(
+            df=group_and_aggregate,
+            drop_columns=[],
+            retain_columns=[],
+            rename_columns={
+                "raingauge_station": "Raingauge Station",
+                "raingauge_readings": "Raingauge Readings",
+            },
+            raise_if_not_found=False,
+            **(params.get("rename_rainfall_table_columns") or {}),
+        )
+        .call()
+    )
+
     rainfall_station_table_html = (
         task(draw_table)
         .validate()
@@ -1043,8 +1070,8 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            dataframe=group_and_aggregate,
-            columns=["raingauge_station", "raingauge_readings"],
+            dataframe=rename_rainfall_table_columns,
+            columns=["Raingauge Station", "Raingauge Readings"],
             table_config={
                 "enable_sorting": True,
                 "enable_filtering": True,
@@ -1136,7 +1163,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             ],
             unpack_depth=1,
         )
-        .partial(abbreviated=True, **(params.get("calendar_month_names") or {}))
+        .partial(abbreviated=False, **(params.get("calendar_month_names") or {}))
         .call()
     )
 
@@ -1182,11 +1209,12 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             layout_style={
                 "bargap": 0.05,
                 "bargroupgap": 0.05,
+                "legend_title": "Month",
                 "title": None,
                 "title_x": 0.01,
                 "title_y": 0.95,
                 "showlegend": True,
-                "font_size": 11,
+                "font_size": 10,
                 "font_color": "#222222",
                 "plot_bgcolor": "#f5f5f5",
                 "xaxis": {"title": "Months", "range": None},
@@ -1312,7 +1340,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         )
         .partial(
             gdf=group_and_aggregate,
-            expansion_factor=1.05,
+            expansion_factor=1.1,
             **(params.get("zoom_to_envelope") or {}),
         )
         .call()
