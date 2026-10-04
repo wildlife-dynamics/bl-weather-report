@@ -1,21 +1,10 @@
-name:  # Title Case, e.g. "My Ecoscope Workflow Template"
-
-# at least one author is required
+name: BL Weather Report
 author:
-  - name: ""
-    organization: ""
-    email: ""
+  - name: Tevin Temu
+    organization: Wildlife Dynamics
+    email: tevin@wildlifedynamics.com
 
-description: # A short description
-
-# todo: add example
-theory: "" # optional
-
-# todo: add example
-output_comment: "" # optional
-
-# optional
-# example
-# citation: 
-#   - Wu, Y. et al. (2025). "Monitoring elephant spatial patterns with Ecoscope workflows."
-citation: [] 
+description: Processes Big Life rain-gauge readings from EarthRanger and MODIS NDVI from Google Earth Engine for the Amboseli ecosystem, and produces rainfall charts, a rainfall-by-station table, an interactive rainfall map, and per-ranch NDVI trend charts, on an interactive dashboard and in a Word report.
+theory: "Each rainfall event's digital rain-gauge reading is used, falling back to the manual gauge reading and then to zero, and readings are summed per gauge station overall and by calendar month. Vegetation condition is measured as NDVI from MODIS, using either the MYD13A1 16-day composite or NDVI computed from MCD43A4 daily NBAR red and near-infrared bands, and is calculated separately for each ranch in the Amboseli conservancy boundaries. Current NDVI is compared against the historic minimum, maximum, and mean for the same month, week, day of year, or MODIS 16-day period."
+output_comment: "Outputs a dashboard with an interactive rainfall map (Amboseli land-use zones, ranch boundaries, the electric fence, and clustered rainfall readings per station), an overall rainfall bar chart by station, a monthly stacked rainfall bar chart, and a rainfall-by-station summary table. Also writes total rainfall per station with point geometry (GeoParquet), HTML and PNG copies of the charts and map, a historic NDVI time-series chart for each ranch, and a Word report (overall_report.docx). The NDVI charts appear only in the Word report, not on the dashboard."
+citation: []
