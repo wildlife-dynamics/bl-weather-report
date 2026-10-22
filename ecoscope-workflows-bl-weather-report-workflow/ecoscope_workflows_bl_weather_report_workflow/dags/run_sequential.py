@@ -466,6 +466,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
+            tooltip_columns=None,
             geodataframe=apply_ambo_color,
             data_url=None,
             layer_style={
@@ -553,6 +554,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
+            tooltip_columns=None,
             geodataframe=filter_ambo_boundaries,
             data_url=None,
             layer_style={
@@ -585,6 +587,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
+            tooltip_columns=None,
             geodataframe=filter_ambo_fence,
             data_url=None,
             layer_style={
@@ -617,6 +620,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
+            event_states=None,
             client=er_client_name,
             time_range=time_range,
             event_columns=[
@@ -657,6 +661,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
+            fan_out=True,
             df=get_events_data,
             column_name="time",
             output_type="date",
@@ -750,6 +755,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
+            duplicate_strategy="suffix",
             drop_columns=[
                 "event_type",
                 "event_category",
@@ -1019,6 +1025,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
+            duplicate_strategy="suffix",
             df=group_and_aggregate,
             drop_columns=[],
             retain_columns=[],
