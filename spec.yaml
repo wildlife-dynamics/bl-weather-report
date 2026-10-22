@@ -242,6 +242,7 @@ workflow:
     id: create_land_layer
     task: ecoscope.platform.tasks.results.create_geojson_layer
     partial:
+      tooltip_columns: null
       geodataframe: ${{ workflow.apply_ambo_color.return }}
       data_url: null
       layer_style:
@@ -293,6 +294,7 @@ workflow:
     id: create_bound_layer
     task: ecoscope.platform.tasks.results.create_geojson_layer
     partial:
+      tooltip_columns: null
       geodataframe: ${{ workflow.filter_ambo_boundaries.return }}
       data_url: null
       layer_style:
@@ -311,6 +313,7 @@ workflow:
     id: create_fence_layer
     task: ecoscope.platform.tasks.results.create_geojson_layer
     partial:
+      tooltip_columns: null
       geodataframe: ${{ workflow.filter_ambo_fence.return }}
       data_url: null
       layer_style:
@@ -329,6 +332,7 @@ workflow:
     id: get_events_data
     task: get_events
     partial:
+      event_states: null
       client: ${{ workflow.er_client_name.return }}
       time_range: ${{ workflow.time_range.return }}
       event_columns:
@@ -357,6 +361,7 @@ workflow:
     id: extract_event_date
     task: extract_column_as_type
     partial:
+      fan_out: true
       df: ${{ workflow.get_events_data.return }}
       column_name: time
       output_type: date
@@ -395,6 +400,7 @@ workflow:
     id: rename_weather_columns
     task: map_columns
     partial:
+      duplicate_strategy: suffix
       drop_columns: [
         "event_type",
         "event_category",
@@ -545,6 +551,7 @@ workflow:
     id: rename_rainfall_table_columns
     task: map_columns
     partial:
+      duplicate_strategy: suffix
       df: ${{ workflow.group_and_aggregate.return }}
       drop_columns: []
       retain_columns: []
