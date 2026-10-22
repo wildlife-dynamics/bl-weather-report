@@ -90,6 +90,153 @@
       "type": "object",
       "title": "Connect to EarthRanger"
     },
+    "create_land_layer": {
+      "additionalProperties": false,
+      "properties": {
+        "tooltip_columns": {
+          "default": null,
+          "items": {
+            "type": "string"
+          },
+          "title": "Tooltip Columns",
+          "type": "array",
+          "description": "Restrict the on-hover tooltip to these column names. None (default) shows all properties.",
+          "ecoscope:advanced": true
+        }
+      },
+      "type": "object",
+      "required": [],
+      "title": "Create amboseli land_use layer"
+    },
+    "create_bound_layer": {
+      "additionalProperties": false,
+      "properties": {
+        "tooltip_columns": {
+          "default": null,
+          "items": {
+            "type": "string"
+          },
+          "title": "Tooltip Columns",
+          "type": "array",
+          "description": "Restrict the on-hover tooltip to these column names. None (default) shows all properties.",
+          "ecoscope:advanced": true
+        }
+      },
+      "type": "object",
+      "required": [],
+      "title": "Create ambo ranch boundaries layer"
+    },
+    "create_fence_layer": {
+      "additionalProperties": false,
+      "properties": {
+        "tooltip_columns": {
+          "default": null,
+          "items": {
+            "type": "string"
+          },
+          "title": "Tooltip Columns",
+          "type": "array",
+          "description": "Restrict the on-hover tooltip to these column names. None (default) shows all properties.",
+          "ecoscope:advanced": true
+        }
+      },
+      "type": "object",
+      "required": [],
+      "title": "Create ambo electric fence layer"
+    },
+    "get_events_data": {
+      "additionalProperties": false,
+      "properties": {
+        "event_states": {
+          "default": null,
+          "items": {
+            "type": "string",
+            "oneOf": [
+              {
+                "const": "new",
+                "title": "New"
+              },
+              {
+                "const": "active",
+                "title": "Active"
+              },
+              {
+                "const": "resolved",
+                "title": "Resolved"
+              },
+              {
+                "const": "review",
+                "title": "Review"
+              }
+            ]
+          },
+          "title": "Event State",
+          "type": "array",
+          "description": "Choose to analyze events with a certain state. If left empty, events of all states will be analyzed",
+          "uniqueItems": true,
+          "ecoscope:advanced": true
+        }
+      },
+      "required": [],
+      "type": "object",
+      "title": "Retrieve rainfall events only"
+    },
+    "extract_event_date": {
+      "additionalProperties": false,
+      "properties": {
+        "fan_out": {
+          "default": true,
+          "title": "Fan Out",
+          "type": "boolean",
+          "description": "Only used when output_type is 'series'. If true (default), expand the extracted collection into indexed columns prefixed by output_column_name. If false, store it as a list in a single output_column_name column."
+        }
+      },
+      "required": [],
+      "type": "object",
+      "title": "Extract date from events data"
+    },
+    "rename_weather_columns": {
+      "additionalProperties": false,
+      "properties": {
+        "duplicate_strategy": {
+          "default": "suffix",
+          "enum": [
+            "suffix",
+            "skip",
+            "overwrite",
+            "error"
+          ],
+          "title": "Duplicate Strategy",
+          "type": "string",
+          "description": "Strategy for handling a rename whose new name is already taken. 'suffix': append _1, _2, etc. to the new name; 'skip': skip the rename, leaving the column under its original name; 'overwrite': replace the existing column; 'error': raise ValueError.",
+          "ecoscope:advanced": true
+        }
+      },
+      "required": [],
+      "type": "object",
+      "title": "Rename weather event columns"
+    },
+    "rename_rainfall_table_columns": {
+      "additionalProperties": false,
+      "properties": {
+        "duplicate_strategy": {
+          "default": "suffix",
+          "enum": [
+            "suffix",
+            "skip",
+            "overwrite",
+            "error"
+          ],
+          "title": "Duplicate Strategy",
+          "type": "string",
+          "description": "Strategy for handling a rename whose new name is already taken. 'suffix': append _1, _2, etc. to the new name; 'skip': skip the rename, leaving the column under its original name; 'overwrite': replace the existing column; 'error': raise ValueError.",
+          "ecoscope:advanced": true
+        }
+      },
+      "required": [],
+      "type": "object",
+      "title": "Rename rainfall station table columns"
+    },
     "ndvi_method": {
       "additionalProperties": false,
       "properties": {
@@ -205,6 +352,13 @@
       "time_range",
       "gee_client",
       "er_client_name",
+      "create_land_layer",
+      "create_bound_layer",
+      "create_fence_layer",
+      "get_events_data",
+      "extract_event_date",
+      "rename_weather_columns",
+      "rename_rainfall_table_columns",
       "ndvi_method",
       "calculate_ndvi"
     ]

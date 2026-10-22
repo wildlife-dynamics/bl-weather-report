@@ -12,8 +12,10 @@ from ecoscope.platform.tasks.io import calculate_ndvi_range as calculate_ndvi_ra
 from ecoscope.platform.tasks.io import get_events as get_events
 from ecoscope.platform.tasks.io import persist_df as persist_df
 from ecoscope.platform.tasks.io import persist_text as persist_text
+from ecoscope.platform.tasks.io import process_events_details as process_events_details
 from ecoscope.platform.tasks.io import set_er_connection as set_er_connection
 from ecoscope.platform.tasks.io import set_gee_connection as set_gee_connection
+from ecoscope.platform.tasks.results import create_geojson_layer as create_geojson_layer
 from ecoscope.platform.tasks.results import (
     create_map_widget_single_view as create_map_widget_single_view,
 )
@@ -25,6 +27,7 @@ from ecoscope.platform.tasks.results import (
 )
 from ecoscope.platform.tasks.results import draw_table as draw_table
 from ecoscope.platform.tasks.results import gather_dashboard as gather_dashboard
+from ecoscope.platform.tasks.results import set_base_maps as set_base_maps
 from ecoscope.platform.tasks.skip import (
     any_dependency_skipped as any_dependency_skipped,
 )
@@ -34,6 +37,9 @@ from ecoscope.platform.tasks.transformation import (
     add_temporal_index as add_temporal_index,
 )
 from ecoscope.platform.tasks.transformation import apply_color_map as apply_color_map
+from ecoscope.platform.tasks.transformation import (
+    decompose_datetime as decompose_datetime,
+)
 from ecoscope.platform.tasks.transformation import (
     extract_column_as_type as extract_column_as_type,
 )
@@ -51,7 +57,7 @@ from ecoscope_workflows_ext_big_life.tasks.reporting import (
 from ecoscope_workflows_ext_big_life.tasks.results import (
     create_clustered_labeled_scatterplot_layer as create_clustered_labeled_scatterplot_layer,
 )
-from ecoscope_workflows_ext_big_life.tasks.results import draw_map as draw_map_2
+from ecoscope_workflows_ext_big_life.tasks.results import draw_map as draw_map_1
 from ecoscope_workflows_ext_big_life.tasks.spatial_ops import (
     spatial_summarize_df as spatial_summarize_df,
 )
@@ -63,20 +69,8 @@ from ecoscope_workflows_ext_big_life.tasks.transformation import (
 )
 from ecoscope_workflows_ext_custom.tasks.io import html_to_png as html_to_png
 from ecoscope_workflows_ext_custom.tasks.io import load_df as load_df
-from ecoscope_workflows_ext_custom.tasks.io import (
-    process_events_details as process_events_details_1,
-)
-from ecoscope_workflows_ext_custom.tasks.results import (
-    create_geojson_layer as create_geojson_layer_1,
-)
-from ecoscope_workflows_ext_custom.tasks.results import (
-    set_base_maps_pydeck as set_base_maps_pydeck,
-)
 from ecoscope_workflows_ext_custom.tasks.spatial_ops import (
     reproject_gdf as reproject_gdf,
-)
-from ecoscope_workflows_ext_custom.tasks.transformation import (
-    decompose_datetime as decompose_datetime,
 )
 from ecoscope_workflows_ext_ste.tasks.io import (
     fetch_and_persist_file as fetch_and_persist_file,
@@ -195,7 +189,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     configure_base_maps = (
-        task(set_base_maps_pydeck)
+        task(set_base_maps)
         .validate()
         .set_task_instance_id("configure_base_maps")
         .handle_errors()
@@ -456,7 +450,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     create_land_layer = (
-        task(create_geojson_layer_1)
+        task(create_geojson_layer)
         .validate()
         .set_task_instance_id("create_land_layer")
         .handle_errors()
@@ -543,7 +537,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     create_bound_layer = (
-        task(create_geojson_layer_1)
+        task(create_geojson_layer)
         .validate()
         .set_task_instance_id("create_bound_layer")
         .handle_errors()
@@ -575,7 +569,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     create_fence_layer = (
-        task(create_geojson_layer_1)
+        task(create_geojson_layer)
         .validate()
         .set_task_instance_id("create_fence_layer")
         .handle_errors()
@@ -694,7 +688,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     process_rainfall_details = (
-        task(process_events_details_1)
+        task(process_events_details)
         .validate()
         .set_task_instance_id("process_rainfall_details")
         .handle_errors()
@@ -1370,7 +1364,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     draw_rainfall_map = (
-        task(draw_map_2)
+        task(draw_map_1)
         .validate()
         .set_task_instance_id("draw_rainfall_map")
         .handle_errors()

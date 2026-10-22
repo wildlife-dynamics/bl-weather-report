@@ -15,6 +15,8 @@ from ecoscope.platform.tasks.filter import set_time_range as set_time_range
 from ecoscope.platform.tasks.groupby import set_groupers as set_groupers
 from ecoscope.platform.tasks.io import set_er_connection as set_er_connection
 from ecoscope.platform.tasks.io import set_gee_connection as set_gee_connection
+from ecoscope.platform.tasks.results import create_geojson_layer as create_geojson_layer
+from ecoscope.platform.tasks.results import set_base_maps as set_base_maps
 from ecoscope.platform.tasks.skip import (
     any_dependency_skipped as any_dependency_skipped,
 )
@@ -22,12 +24,6 @@ from ecoscope.platform.tasks.skip import any_is_empty_df as any_is_empty_df
 from ecoscope.platform.tasks.transformation import apply_color_map as apply_color_map
 from ecoscope.platform.tasks.transformation import filter_df as filter_df
 from ecoscope_workflows_ext_custom.tasks.io import load_df as load_df
-from ecoscope_workflows_ext_custom.tasks.results import (
-    create_geojson_layer as create_geojson_layer_1,
-)
-from ecoscope_workflows_ext_custom.tasks.results import (
-    set_base_maps_pydeck as set_base_maps_pydeck,
-)
 from ecoscope_workflows_ext_custom.tasks.spatial_ops import (
     reproject_gdf as reproject_gdf,
 )
@@ -51,8 +47,8 @@ from ecoscope.platform.tasks.transformation import (
     extract_column_as_type as extract_column_as_type,
 )
 
-process_events_details_1 = create_func_magicmock(  # 🧪
-    anchor="ecoscope_workflows_ext_custom.tasks.io",  # 🧪
+process_events_details = create_func_magicmock(  # 🧪
+    anchor="ecoscope.platform.tasks.io",  # 🧪
     func_name="process_events_details",  # 🧪
 )  # 🧪
 from ecoscope.platform.tasks.config import set_string_var as set_string_var
@@ -70,6 +66,9 @@ from ecoscope.platform.tasks.results import (
 )
 from ecoscope.platform.tasks.results import draw_table as draw_table
 from ecoscope.platform.tasks.skip import never as never
+from ecoscope.platform.tasks.transformation import (
+    decompose_datetime as decompose_datetime,
+)
 from ecoscope.platform.tasks.transformation import map_columns as map_columns
 from ecoscope.platform.tasks.transformation import (
     normalize_json_column as normalize_json_column,
@@ -80,7 +79,7 @@ from ecoscope_workflows_ext_big_life.tasks.localization import (
 from ecoscope_workflows_ext_big_life.tasks.results import (
     create_clustered_labeled_scatterplot_layer as create_clustered_labeled_scatterplot_layer,
 )
-from ecoscope_workflows_ext_big_life.tasks.results import draw_map as draw_map_2
+from ecoscope_workflows_ext_big_life.tasks.results import draw_map as draw_map_1
 from ecoscope_workflows_ext_big_life.tasks.spatial_ops import (
     spatial_summarize_df as spatial_summarize_df,
 )
@@ -89,9 +88,6 @@ from ecoscope_workflows_ext_big_life.tasks.transformation import (
 )
 from ecoscope_workflows_ext_big_life.tasks.transformation import (
     convert_columns_to_float as convert_columns_to_float,
-)
-from ecoscope_workflows_ext_custom.tasks.transformation import (
-    decompose_datetime as decompose_datetime,
 )
 from ecoscope_workflows_ext_ste.tasks.spatial_operations import (
     combine_deckgl_map_layers as combine_deckgl_map_layers,
@@ -216,7 +212,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     configure_base_maps = (
-        task(set_base_maps_pydeck)
+        task(set_base_maps)
         .validate()
         .set_task_instance_id("configure_base_maps")
         .handle_errors()
@@ -477,7 +473,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     create_land_layer = (
-        task(create_geojson_layer_1)
+        task(create_geojson_layer)
         .validate()
         .set_task_instance_id("create_land_layer")
         .handle_errors()
@@ -564,7 +560,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     create_bound_layer = (
-        task(create_geojson_layer_1)
+        task(create_geojson_layer)
         .validate()
         .set_task_instance_id("create_bound_layer")
         .handle_errors()
@@ -596,7 +592,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     create_fence_layer = (
-        task(create_geojson_layer_1)
+        task(create_geojson_layer)
         .validate()
         .set_task_instance_id("create_fence_layer")
         .handle_errors()
@@ -715,7 +711,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     process_rainfall_details = (
-        task(process_events_details_1)
+        task(process_events_details)
         # 🧪 validation omitted for mocked IO task (returns pre-loaded example data)
         .set_task_instance_id("process_rainfall_details")
         .handle_errors()
@@ -1391,7 +1387,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     draw_rainfall_map = (
-        task(draw_map_2)
+        task(draw_map_1)
         .validate()
         .set_task_instance_id("draw_rainfall_map")
         .handle_errors()
