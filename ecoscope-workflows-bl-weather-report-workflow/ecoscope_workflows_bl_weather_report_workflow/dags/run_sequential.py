@@ -1736,6 +1736,10 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         .partial(
             template_path=weather_report_word_doc,
             output_dir=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
+            rainfall_bar_chart=convrt_br_png,
+            rainfall_map=convert_map_png,
+            rainfall_monthly_bar_chart=convrt_monthly_png,
+            ranch_ndvi_charts=convrt_ranch_png,
             generated_by="Ecoscope",
             validate_images=True,
             box_height=3.12,
