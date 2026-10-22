@@ -863,6 +863,13 @@ workflow:
       time_period: ${{ workflow.time_range.return}}
       filename: "overall_report.docx"
       
+  - name: Report files
+    id: report_files
+    task: create_files_single_view
+    partial:
+      files:
+        - ${{ workflow.generate_bl_weather_report.return }}
+
   - name: Big life event report dashboard
     id: bl_events_dashboard
     task: gather_dashboard
@@ -875,5 +882,6 @@ workflow:
         - ${{ workflow.rainfall_station_table_widget.return }}
       time_range: ${{ workflow.time_range.return}}
       groupers: ${{ workflow.groupers.return }}
+      files: ${{ workflow.report_files.return }}
       
 # -- persist weather events as geoparquet
