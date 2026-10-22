@@ -23,12 +23,12 @@ from ecoscope.platform.tasks.skip import (
 from ecoscope.platform.tasks.skip import any_is_empty_df as any_is_empty_df
 from ecoscope.platform.tasks.transformation import apply_color_map as apply_color_map
 from ecoscope.platform.tasks.transformation import filter_df as filter_df
+from ecoscope_workflows_ext_big_life.tasks.io import (
+    load_big_life_file as load_big_life_file,
+)
 from ecoscope_workflows_ext_custom.tasks.io import load_df as load_df
 from ecoscope_workflows_ext_custom.tasks.spatial_ops import (
     reproject_gdf as reproject_gdf,
-)
-from ecoscope_workflows_ext_ste.tasks.io import (
-    fetch_and_persist_file as fetch_and_persist_file,
 )
 from wt_contracts import validate as _validate
 from wt_task import task
@@ -246,7 +246,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     ambo_ranch_layers = (
-        task(fetch_and_persist_file)
+        task(load_big_life_file)
         .validate()
         .set_task_instance_id("ambo_ranch_layers")
         .handle_errors()
@@ -259,18 +259,14 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            url="https://www.dropbox.com/scl/fi/wrcp3pnnxqyrclzmbtt1r/amboseli_ranch_conservancies_layers.gpkg?rlkey=jfbqj1b1nwhijxbsy7b2v1d29&st=d7rbqdfe&dl=0",
-            output_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            overwrite_existing=False,
-            retries=3,
-            unzip=False,
+            filename="amboseli_ranch_conservancies_layers.gpkg",
             **(params.get("ambo_ranch_layers") or {}),
         )
         .call()
     )
 
     ambo_bound_fence = (
-        task(fetch_and_persist_file)
+        task(load_big_life_file)
         .validate()
         .set_task_instance_id("ambo_bound_fence")
         .handle_errors()
@@ -283,18 +279,14 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            url="https://www.dropbox.com/scl/fi/k6dgrmxmxeb3fe6glihwa/amboseli_group_ranch_boundaries_x_electric_fence.gpkg?rlkey=limtzffe88lr0iof5kf3b6uoy&st=rreho3tq&dl=0",
-            output_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            overwrite_existing=False,
-            retries=3,
-            unzip=False,
+            filename="amboseli_group_ranch_boundaries_x_electric_fence.gpkg",
             **(params.get("ambo_bound_fence") or {}),
         )
         .call()
     )
 
     ambo_conservancies = (
-        task(fetch_and_persist_file)
+        task(load_big_life_file)
         .validate()
         .set_task_instance_id("ambo_conservancies")
         .handle_errors()
@@ -307,11 +299,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            url="https://www.dropbox.com/scl/fi/blo1smf49buhwx24y4z60/amboseli_group_ranch_boundaries.gpkg?rlkey=w86emavj8ug7zab73ifbzg6jv&st=v8uptlb0&dl=0",
-            output_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            overwrite_existing=False,
-            retries=3,
-            unzip=False,
+            filename="amboseli_group_ranch_boundaries.gpkg",
             **(params.get("ambo_conservancies") or {}),
         )
         .call()
@@ -1727,7 +1715,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     weather_report_word_doc = (
-        task(fetch_and_persist_file)
+        task(load_big_life_file)
         .validate()
         .set_task_instance_id("weather_report_word_doc")
         .handle_errors()
@@ -1740,11 +1728,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            url="https://www.dropbox.com/scl/fi/mtsv3inq9u9443a676bn3/big_life_weather_report_template.docx?rlkey=hq3cnrdza32430iniffo6s39p&st=nsa0j1c1&dl=0",
-            output_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            overwrite_existing=False,
-            retries=3,
-            unzip=False,
+            filename="big_life_weather_report_template.docx",
             **(params.get("weather_report_word_doc") or {}),
         )
         .call()
