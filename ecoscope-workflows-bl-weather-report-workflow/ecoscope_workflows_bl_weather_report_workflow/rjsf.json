@@ -24,23 +24,19 @@
       "additionalProperties": false,
       "properties": {
         "since": {
+          "description": "The start time",
           "format": "date-time",
           "title": "Since",
-          "type": "string",
-          "description": "The start time"
+          "type": "string"
         },
         "until": {
+          "description": "The end time",
           "format": "date-time",
           "title": "Until",
-          "type": "string",
-          "description": "The end time"
+          "type": "string"
         },
         "timezone": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/TimezoneInfo"
-            }
-          ],
+          "$ref": "#/$defs/TimezoneInfo",
           "default": null,
           "title": "Timezone"
         }
@@ -58,8 +54,8 @@
       "properties": {
         "data_source": {
           "$ref": "#/$defs/GoogleEarthEngineConnection",
-          "title": "",
-          "description": "Select one of your configured data sources."
+          "description": "Select one of your configured data sources.",
+          "title": ""
         }
       },
       "required": [
@@ -73,8 +69,8 @@
       "properties": {
         "data_source": {
           "$ref": "#/$defs/EarthRangerConnection",
-          "title": "",
-          "description": "Select one of your configured data sources."
+          "description": "Select one of your configured data sources.",
+          "title": ""
         }
       },
       "required": [
@@ -106,6 +102,7 @@
       "properties": {
         "grouping_unit": {
           "default": "month",
+          "description": "Temporal unit for grouping historical data when calculating statistics. 'month': Compare against same calendar month (1-12). 'week': Compare against same ISO week number (1-53). 'day_of_year': Compare against same day of year (1-366). 'modis_16_day': Compare against same MODIS 16-day composite period (0-22).",
           "enum": [
             "month",
             "week",
@@ -113,8 +110,7 @@
             "modis_16_day"
           ],
           "title": "Grouping Unit",
-          "type": "string",
-          "description": "Temporal unit for grouping historical data when calculating statistics. 'month': Compare against same calendar month (1-12). 'week': Compare against same ISO week number (1-53). 'day_of_year': Compare against same day of year (1-366). 'modis_16_day': Compare against same MODIS 16-day composite period (0-22)."
+          "type": "string"
         }
       },
       "required": [],
