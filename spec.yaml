@@ -1,4 +1,60 @@
 id: bl_weather_report
+
+metadata:
+  name: BL Weather Report
+  description: >-
+    Processes Big Life rain-gauge readings from EarthRanger and MODIS NDVI from Google
+    Earth Engine for the Amboseli ecosystem, and produces rainfall charts, a
+    rainfall-by-station table, an interactive rainfall map, and per-ranch NDVI trend
+    charts, on an interactive dashboard and in a Word report.
+  maintainers:
+    - name: Tevin Temu
+      email: tevin@wildlifedynamics.com
+      role: owner
+    - name: Zakariya Husayn
+      email: zakariya@wildlifedynamics.com
+      role: reviewer
+  outputs:
+    - name: BL Weather Dashboard
+      type: dashboard
+      description: >-
+        A dashboard with an interactive rainfall map, an overall rainfall bar chart by
+        station, a monthly stacked rainfall bar chart, and a rainfall-by-station table.
+      indicators:
+        - name: Rainfall
+    - name: Rainfall Map
+      type: map
+      description: >-
+        Amboseli land-use zones, ranch boundaries and the electric fence, with clustered
+        rainfall readings per station.
+      indicators:
+        - name: Rainfall
+    - name: Rainfall Charts
+      type: plot
+      description: >-
+        Total rainfall by station, and monthly rainfall by station.
+      indicators:
+        - name: Rainfall
+    - name: Weather Report
+      type: file
+      description: >-
+        A Word report (overall_report.docx) with the rainfall map and charts and a
+        historic NDVI time-series chart for each ranch.
+      indicators:
+        - name: Rainfall
+        - name: NDVI
+    - name: Rainfall Data
+      type: file
+      description: >-
+        Total rainfall per station with point geometry (GeoParquet).
+      indicators:
+        - name: Rainfall
+  license: BSD-3-Clause
+  repository: https://github.com/wildlife-dynamics/bl-weather-report
+  documentation: https://github.com/wildlife-dynamics/bl-weather-report#readme
+  readme: README.md
+  keywords: [weather, rainfall, ndvi, big-life, amboseli]
+  thumbnail: resources/thumbnail.png
 requirements:
   - name: ecoscope-platform
     version: ">=2.25.1,<3.0.0"
@@ -17,11 +73,11 @@ requirements:
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
 
   - name: ecoscope-workflows-ext-wwf-virunga
-    version: "0.0.0rc9.*"
+    version: "1.0.1"
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
 
   - name: ecoscope-workflows-ext-big-life
-    version: "1.3.0"
+    version: "1.4.2"
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
     
   - name: pydeck
@@ -59,6 +115,8 @@ workflow:
   - name: Time Range
     id: time_range
     task: set_time_range
+    partial:
+      time_format: "%d %b %Y %H:%M:%S"
 
   # Define groupers 
   - name: Set Groupers
@@ -708,6 +766,63 @@ workflow:
       title: "Rainfall Map"
       data: ${{ workflow.persist_rainfall_urls.return }}
 
+  - name: Create rainfall stations scatterplot layer
+    id: rainfall_station_scatter_layer
+    task: create_scatterplot_layer
+    partial:
+      data_url: null
+      geodataframe: ${{ workflow.group_and_aggregate.return }}
+      layer_style:
+        get_fill_color: [100, 149, 237]
+        get_line_color: [100, 149, 237]
+        get_radius: "raingauge_readings"
+        get_line_width: 1
+        radius_units: "pixels"
+        radius_scale: 0.025
+        radius_min_pixels: 4
+        radius_max_pixels: 30
+        opacity: 0.75
+        stroked: true
+        filled: true
+      legend:
+        title: Readings
+        values:
+          - label: Rainfall readings (mm)
+            color: "#6495ed"
+      tooltip_columns: ["raingauge_station", "raingauge_readings"]
+
+  - name: Combine styled layers with rainfall stations scatterplot
+    id: combined_scatter_map_layers
+    task: ecoscope_workflows_ext_ste.tasks.spatial_operations.combine_deckgl_map_layers
+    partial:
+      static_layers:
+        - ${{ workflow.create_land_layer.return }}
+        - ${{ workflow.create_bound_layer.return }}
+        - ${{ workflow.create_fence_layer.return }}
+      grouped_layers:
+        - ${{ workflow.rainfall_station_scatter_layer.return }}
+
+  - name: Draw rainfall stations scatterplot map
+    id: draw_rainfall_scatter_map
+    task: ecoscope_workflows_ext_big_life.tasks.results.draw_map
+    partial:
+      tile_layers: ${{ workflow.configure_base_maps.return }}
+      static: false
+      title: null
+      max_zoom: 10
+      legend_style:
+        placement: "bottom-right"
+      geo_layers: ${{ workflow.combined_scatter_map_layers.return }}
+      view_state: ${{ workflow.gdf_image_extent.return }}
+
+  - name: Persist rainfall stations scatterplot map
+    id: persist_rainfall_scatter_url
+    task: persist_text
+    partial:
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      text: ${{ workflow.draw_rainfall_scatter_map.return }}
+      filename: rainfall_scatter_map.html
+
   - name: Split values by ranch name
     id: split_roi_groups 
     task: split_groups
@@ -828,7 +943,7 @@ workflow:
     task: html_to_png 
     partial: 
       output_dir: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
-      html_path: ${{ workflow.persist_rainfall_urls.return }}
+      html_path: ${{ workflow.persist_rainfall_scatter_url.return }}
       config: 
         full_page: false
         device_scale_factor: 2.0 
@@ -851,6 +966,7 @@ workflow:
       rainfall_map: ${{ workflow.convert_map_png.return }}
       rainfall_monthly_bar_chart: ${{ workflow.convrt_monthly_png.return }}
       ranch_ndvi_charts: ${{ workflow.convrt_ranch_png.return }}
+      rainfall_table: ${{ workflow.persist_rainfall_data.return }}
       generated_by: "Ecoscope"
       validate_images: true 
       box_height: 3.12
