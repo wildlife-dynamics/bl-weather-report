@@ -73,11 +73,11 @@ requirements:
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
 
   - name: ecoscope-workflows-ext-wwf-virunga
-    version: "0.0.0rc9.*"
+    version: "1.0.1"
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
 
   - name: ecoscope-workflows-ext-big-life
-    version: "1.3.1"
+    version: "1.4.1"
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
     
   - name: pydeck
@@ -115,6 +115,8 @@ workflow:
   - name: Time Range
     id: time_range
     task: set_time_range
+    partial:
+      time_format: "%d %b %Y %H:%M:%S"
 
   # Define groupers 
   - name: Set Groupers
