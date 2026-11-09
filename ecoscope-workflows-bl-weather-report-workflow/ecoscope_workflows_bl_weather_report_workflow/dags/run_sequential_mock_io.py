@@ -62,6 +62,9 @@ from ecoscope.platform.tasks.results import (
     create_plot_widget_single_view as create_plot_widget_single_view,
 )
 from ecoscope.platform.tasks.results import (
+    create_scatterplot_layer as create_scatterplot_layer,
+)
+from ecoscope.platform.tasks.results import (
     create_table_widget_single_view as create_table_widget_single_view,
 )
 from ecoscope.platform.tasks.results import draw_table as draw_table
@@ -1452,6 +1455,114 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         .call()
     )
 
+    rainfall_station_scatter_layer = (
+        task(create_scatterplot_layer)
+        .validate()
+        .set_task_instance_id("rainfall_station_scatter_layer")
+        .handle_errors()
+        .with_tracing()
+        .skipif(
+            conditions=[
+                any_is_empty_df,
+                any_dependency_skipped,
+            ],
+            unpack_depth=1,
+        )
+        .partial(
+            data_url=None,
+            geodataframe=group_and_aggregate,
+            layer_style={
+                "get_fill_color": [100, 149, 237],
+                "get_line_color": [100, 149, 237],
+                "get_radius": "raingauge_readings",
+                "get_line_width": 1,
+                "radius_units": "pixels",
+                "radius_scale": 0.025,
+                "radius_min_pixels": 4,
+                "radius_max_pixels": 30,
+                "opacity": 0.75,
+                "stroked": True,
+                "filled": True,
+            },
+            legend={
+                "title": "Readings",
+                "values": [{"label": "Rainfall readings (mm)", "color": "#6495ed"}],
+            },
+            tooltip_columns=["raingauge_station", "raingauge_readings"],
+            **(params.get("rainfall_station_scatter_layer") or {}),
+        )
+        .call()
+    )
+
+    combined_scatter_map_layers = (
+        task(combine_deckgl_map_layers)
+        .validate()
+        .set_task_instance_id("combined_scatter_map_layers")
+        .handle_errors()
+        .with_tracing()
+        .skipif(
+            conditions=[
+                any_is_empty_df,
+                any_dependency_skipped,
+            ],
+            unpack_depth=1,
+        )
+        .partial(
+            static_layers=[create_land_layer, create_bound_layer, create_fence_layer],
+            grouped_layers=[rainfall_station_scatter_layer],
+            **(params.get("combined_scatter_map_layers") or {}),
+        )
+        .call()
+    )
+
+    draw_rainfall_scatter_map = (
+        task(draw_map_1)
+        .validate()
+        .set_task_instance_id("draw_rainfall_scatter_map")
+        .handle_errors()
+        .with_tracing()
+        .skipif(
+            conditions=[
+                any_is_empty_df,
+                any_dependency_skipped,
+            ],
+            unpack_depth=1,
+        )
+        .partial(
+            tile_layers=configure_base_maps,
+            static=False,
+            title=None,
+            max_zoom=10,
+            legend_style={"placement": "bottom-right"},
+            geo_layers=combined_scatter_map_layers,
+            view_state=gdf_image_extent,
+            **(params.get("draw_rainfall_scatter_map") or {}),
+        )
+        .call()
+    )
+
+    persist_rainfall_scatter_url = (
+        task(persist_text)
+        .validate()
+        .set_task_instance_id("persist_rainfall_scatter_url")
+        .handle_errors()
+        .with_tracing()
+        .skipif(
+            conditions=[
+                any_is_empty_df,
+                any_dependency_skipped,
+            ],
+            unpack_depth=1,
+        )
+        .partial(
+            root_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
+            text=draw_rainfall_scatter_map,
+            filename="rainfall_scatter_map.html",
+            **(params.get("persist_rainfall_scatter_url") or {}),
+        )
+        .call()
+    )
+
     split_roi_groups = (
         task(split_groups)
         .validate()
@@ -1702,7 +1813,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         )
         .partial(
             output_dir=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            html_path=persist_rainfall_urls,
+            html_path=persist_rainfall_scatter_url,
             config={
                 "full_page": False,
                 "device_scale_factor": 2.0,
@@ -1754,6 +1865,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             rainfall_map=convert_map_png,
             rainfall_monthly_bar_chart=convrt_monthly_png,
             ranch_ndvi_charts=convrt_ranch_png,
+            rainfall_table=persist_rainfall_data,
             generated_by="Ecoscope",
             validate_images=True,
             box_height=3.12,
